@@ -19,6 +19,8 @@
 - `/api/v1/auth/email-code`、`/api/v1/auth/register`、`/api/v1/auth/login` 为匿名接口
 - 其余 `/api/v1/**` 接口默认需要 Bearer Token
 - 本地没有 SMTP 时可开启 `TREEHOLE_AUTH_MOCK_EMAIL_ENABLED=true` 用日志模拟验证码
+- 真实 SMTP 发信时，`AuthService` 会优先使用 `treehole.auth.mail-from`，未配置时自动回退到 `spring.mail.username`
+- QQ 邮箱若使用 `587` 端口，建议开启 STARTTLS；若使用 `465` 端口，建议关闭 STARTTLS 并开启 SSL
 
 ## 变更历史
 - [202604081956_whu_treehole_backend](../../history/2026-04/202604081956_whu_treehole_backend/) - 初始化控制器、服务与缓存配置

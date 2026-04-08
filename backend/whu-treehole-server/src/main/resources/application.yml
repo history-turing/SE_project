@@ -15,16 +15,25 @@ spring:
       password: jwdyszm0220
       timeout: 2000ms
   mail:
-    host: ${TREEHOLE_MAIL_HOST:smtp.mailersend.net}
+    host: ${TREEHOLE_MAIL_HOST:smtp.qq.com}
     port: ${TREEHOLE_MAIL_PORT:587}
-    username: ${TREEHOLE_MAIL_USERNAME:xiewei}
-    password: ${TREEHOLE_MAIL_PASSWORD:Jwdyszm0220}
+    username: ${TREEHOLE_MAIL_USERNAME:2953695254@qq.com}
+    password: ${TREEHOLE_MAIL_PASSWORD:xpmdhbwnkrkidfei}
+    default-encoding: UTF-8
     properties:
       mail:
         smtp:
           auth: ${TREEHOLE_MAIL_SMTP_AUTH:true}
+          from: ${TREEHOLE_AUTH_MAIL_FROM:${spring.mail.username:}}
+          connectiontimeout: ${TREEHOLE_MAIL_SMTP_CONNECTION_TIMEOUT:5000}
+          timeout: ${TREEHOLE_MAIL_SMTP_TIMEOUT:5000}
+          writetimeout: ${TREEHOLE_MAIL_SMTP_WRITE_TIMEOUT:5000}
           starttls:
             enable: ${TREEHOLE_MAIL_SMTP_STARTTLS:true}
+            required: ${TREEHOLE_MAIL_SMTP_STARTTLS_REQUIRED:false}
+          ssl:
+            enable: ${TREEHOLE_MAIL_SMTP_SSL_ENABLE:false}
+            trust: ${TREEHOLE_MAIL_SMTP_SSL_TRUST:smtp.qq.com}
   jackson:
     time-zone: Asia/Shanghai
   cache:
@@ -60,4 +69,4 @@ treehole:
     email-send-cooldown: ${TREEHOLE_AUTH_EMAIL_SEND_COOLDOWN:60s}
     session-ttl: ${TREEHOLE_AUTH_SESSION_TTL:7d}
     mock-email-enabled: ${TREEHOLE_AUTH_MOCK_EMAIL_ENABLED:false}
-    mail-from: ${TREEHOLE_AUTH_MAIL_FROM:${TREEHOLE_MAIL_USERNAME:}}
+    mail-from: ${TREEHOLE_AUTH_MAIL_FROM:${spring.mail.username:}}

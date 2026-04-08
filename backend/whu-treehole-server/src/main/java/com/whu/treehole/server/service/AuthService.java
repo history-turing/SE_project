@@ -20,6 +20,7 @@ import java.security.SecureRandom;
 import java.time.LocalDateTime;
 import java.util.HexFormat;
 import java.util.UUID;
+import org.springframework.boot.autoconfigure.mail.MailProperties;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.redis.core.StringRedisTemplate;
@@ -41,6 +42,7 @@ public class AuthService {
     private final JavaMailSender javaMailSender;
     private final PasswordEncoder passwordEncoder;
     private final AuthProperties authProperties;
+    private final MailProperties mailProperties;
     private final SecureRandom secureRandom = new SecureRandom();
 
     public AuthService(AuthMapper authMapper,
@@ -48,13 +50,15 @@ public class AuthService {
                        StringRedisTemplate stringRedisTemplate,
                        JavaMailSender javaMailSender,
                        PasswordEncoder passwordEncoder,
-                       AuthProperties authProperties) {
+                       AuthProperties authProperties,
+                       MailProperties mailProperties) {
         this.authMapper = authMapper;
         this.portalQueryMapper = portalQueryMapper;
         this.stringRedisTemplate = stringRedisTemplate;
         this.javaMailSender = javaMailSender;
         this.passwordEncoder = passwordEncoder;
         this.authProperties = authProperties;
+        this.mailProperties = mailProperties;
     }
 
     public void sendEmailCode(EmailCodeRequest request) {
@@ -78,8 +82,9 @@ public class AuthService {
         }
 
         SimpleMailMessage message = new SimpleMailMessage();
-        if (authProperties.getMailFrom() != null && !authProperties.getMailFrom().isBlank()) {
-            message.setFrom(authProperties.getMailFrom().trim());
+        String fromAddress = resolveMailFrom();
+        if (!fromAddress.isBlank()) {
+            message.setFrom(fromAddress);
         }
         message.setTo(email);
         message.setSubject("武大树洞注册验证码");
@@ -89,6 +94,13 @@ public class AuthService {
         } catch (MailException exception) {
             stringRedisTemplate.delete(emailCodeKey(email));
             stringRedisTemplate.delete(emailSendLockKey(email));
+            log.error("邮箱验证码发送失败: email={}, host={}, port={}, username={}, from={}",
+                    email,
+                    mailProperties.getHost(),
+                    mailProperties.getPort(),
+                    mailProperties.getUsername(),
+                    fromAddress,
+                    exception);
             throw new BusinessException(5001, "验证码发送失败，请检查邮箱服务配置");
         }
     }
@@ -225,6 +237,13 @@ public class AuthService {
 
     private String sessionKey(String token) {
         return "auth:session:" + token;
+    }
+
+    private String resolveMailFrom() {
+        if (authProperties.getMailFrom() != null && !authProperties.getMailFrom().isBlank()) {
+            return authProperties.getMailFrom().trim();
+        }
+        return mailProperties.getUsername() == null ? "" : mailProperties.getUsername().trim();
     }
 
     private String buildEmailContent(String code) {

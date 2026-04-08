@@ -21,6 +21,8 @@
 | `TREEHOLE_MAIL_HOST` / `TREEHOLE_MAIL_PORT` | SMTP 地址与端口 |
 | `TREEHOLE_MAIL_USERNAME` / `TREEHOLE_MAIL_PASSWORD` | SMTP 账号密码 |
 | `TREEHOLE_AUTH_MAIL_FROM` | 发件人地址，默认取 SMTP 用户名 |
+| `TREEHOLE_MAIL_SMTP_STARTTLS` / `TREEHOLE_MAIL_SMTP_SSL_ENABLE` | SMTP 加密方式，587 常用 STARTTLS，465 常用 SSL |
+| `TREEHOLE_MAIL_SMTP_SSL_TRUST` | SSL 信任主机，QQ 邮箱可保持 `smtp.qq.com` |
 | `TREEHOLE_AUTH_EMAIL_CODE_TTL` | 验证码有效期，默认 5m |
 | `TREEHOLE_AUTH_EMAIL_SEND_COOLDOWN` | 发码冷却时间，默认 60s |
 | `TREEHOLE_AUTH_SESSION_TTL` | 登录会话有效期，默认 7d |
@@ -45,5 +47,9 @@ java -jar whu-treehole-server/target/whu-treehole-server-0.1.0-SNAPSHOT.jar --sp
 
 ## 7. 真实邮箱发送说明
 - 要真实发信，必须配置 `TREEHOLE_MAIL_HOST`、`TREEHOLE_MAIL_PORT`、`TREEHOLE_MAIL_USERNAME`、`TREEHOLE_MAIL_PASSWORD`。
-- 常见 SMTP 还需要 TLS/STARTTLS，默认已在 `application.yml` 中开启。
+- 当前后端会默认把发件人地址回退到 `spring.mail.username`，避免 SMTP 因空 `From` 拒信。
+- QQ 邮箱常见两种配置:
+  - `587` 端口: `TREEHOLE_MAIL_SMTP_STARTTLS=true`，`TREEHOLE_MAIL_SMTP_SSL_ENABLE=false`
+  - `465` 端口: `TREEHOLE_MAIL_SMTP_STARTTLS=false`，`TREEHOLE_MAIL_SMTP_SSL_ENABLE=true`
+- 如果仍然发送失败，请先查看后端日志中的 `邮箱验证码发送失败` 记录，里面会打印 host/port/from 等关键信息。
 - 如果 `/actuator/health` 显示 mail 不健康，而你启用了 mock 模式，可忽略该项对本地联调的影响。
