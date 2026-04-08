@@ -1,0 +1,63 @@
+spring:
+  application:
+    name: whu-treehole-backend
+  profiles:
+    default: local
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://localhost:3306/se_project?useUnicode=true&characterEncoding=UTF-8&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true&useSSL=false
+    username: root
+    password: jwdyszm0220
+  data:
+    redis:
+      host: ${TREEHOLE_REDIS_HOST:localhost}
+      port: ${TREEHOLE_REDIS_PORT:6379}
+      password: jwdyszm0220
+      timeout: 2000ms
+  mail:
+    host: ${TREEHOLE_MAIL_HOST:smtp.mailersend.net}
+    port: ${TREEHOLE_MAIL_PORT:587}
+    username: ${TREEHOLE_MAIL_USERNAME:xiewei}
+    password: ${TREEHOLE_MAIL_PASSWORD:Jwdyszm0220}
+    properties:
+      mail:
+        smtp:
+          auth: ${TREEHOLE_MAIL_SMTP_AUTH:true}
+          starttls:
+            enable: ${TREEHOLE_MAIL_SMTP_STARTTLS:true}
+  jackson:
+    time-zone: Asia/Shanghai
+  cache:
+    type: redis
+    redis:
+      key-prefix: "whu-treehole::"
+      use-key-prefix: true
+  sql:
+    init:
+      mode: never
+  mvc:
+    problemdetails:
+      enabled: false
+
+mybatis:
+  mapper-locations: classpath*:mapper/*.xml
+  configuration:
+    map-underscore-to-camel-case: true
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+
+server:
+  port: ${TREEHOLE_SERVER_PORT:8080}
+
+treehole:
+  auth:
+    email-suffix: ${TREEHOLE_AUTH_EMAIL_SUFFIX:@whu.edu.cn}
+    email-code-ttl: ${TREEHOLE_AUTH_EMAIL_CODE_TTL:5m}
+    email-send-cooldown: ${TREEHOLE_AUTH_EMAIL_SEND_COOLDOWN:60s}
+    session-ttl: ${TREEHOLE_AUTH_SESSION_TTL:7d}
+    mock-email-enabled: ${TREEHOLE_AUTH_MOCK_EMAIL_ENABLED:false}
+    mail-from: ${TREEHOLE_AUTH_MAIL_FROM:${TREEHOLE_MAIL_USERNAME:}}

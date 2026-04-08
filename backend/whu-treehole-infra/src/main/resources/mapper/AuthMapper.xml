@@ -1,0 +1,113 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.whu.treehole.infra.mapper.AuthMapper">
+
+    <select id="selectCredentialByUsername" resultType="com.whu.treehole.infra.model.AuthCredentialData">
+        SELECT id,
+               user_id,
+               email,
+               username,
+               password_hash,
+               email_verified_at,
+               last_login_at,
+               created_at,
+               updated_at
+        FROM user_credentials
+        WHERE username = #{username}
+        LIMIT 1
+    </select>
+
+    <select id="selectCredentialByEmail" resultType="com.whu.treehole.infra.model.AuthCredentialData">
+        SELECT id,
+               user_id,
+               email,
+               username,
+               password_hash,
+               email_verified_at,
+               last_login_at,
+               created_at,
+               updated_at
+        FROM user_credentials
+        WHERE email = #{email}
+        LIMIT 1
+    </select>
+
+    <select id="selectCredentialByUserId" resultType="com.whu.treehole.infra.model.AuthCredentialData">
+        SELECT id,
+               user_id,
+               email,
+               username,
+               password_hash,
+               email_verified_at,
+               last_login_at,
+               created_at,
+               updated_at
+        FROM user_credentials
+        WHERE user_id = #{userId}
+        LIMIT 1
+    </select>
+
+    <insert id="insertUser" parameterType="com.whu.treehole.infra.model.UserCreateData" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO users (
+            user_code,
+            name,
+            tagline,
+            college,
+            grade_year,
+            bio,
+            avatar_url,
+            created_at
+        ) VALUES (
+            #{userCode},
+            #{name},
+            #{tagline},
+            #{college},
+            #{gradeYear},
+            #{bio},
+            #{avatarUrl},
+            #{createdAt}
+        )
+    </insert>
+
+    <insert id="insertCredential" parameterType="com.whu.treehole.infra.model.AuthCredentialData" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO user_credentials (
+            user_id,
+            email,
+            username,
+            password_hash,
+            email_verified_at,
+            last_login_at,
+            created_at,
+            updated_at
+        ) VALUES (
+            #{userId},
+            #{email},
+            #{username},
+            #{passwordHash},
+            #{emailVerifiedAt},
+            #{lastLoginAt},
+            #{createdAt},
+            #{updatedAt}
+        )
+    </insert>
+
+    <update id="updateLastLoginAt">
+        UPDATE user_credentials
+        SET last_login_at = #{lastLoginAt},
+            updated_at = #{lastLoginAt}
+        WHERE user_id = #{userId}
+    </update>
+
+    <insert id="insertUserBadge">
+        INSERT INTO user_badges (user_id, badge_name, sort_order)
+        VALUES (#{userId}, #{badgeName}, #{sortOrder})
+    </insert>
+
+    <insert id="insertUserStat">
+        INSERT INTO user_profile_stats (user_id, stat_label, stat_value, sort_order)
+        VALUES (#{userId}, #{statLabel}, #{statValue}, #{sortOrder})
+    </insert>
+
+</mapper>

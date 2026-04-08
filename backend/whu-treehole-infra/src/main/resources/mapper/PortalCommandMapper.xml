@@ -1,0 +1,174 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.whu.treehole.infra.mapper.PortalCommandMapper">
+
+    <select id="countTopicByName" resultType="java.lang.Integer">
+        SELECT COUNT(1)
+        FROM topics
+        WHERE name = #{topicName}
+    </select>
+
+    <insert id="insertPost" parameterType="com.whu.treehole.infra.model.PostData" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO posts (
+            post_code,
+            creator_user_id,
+            title,
+            content,
+            author_name,
+            author_handle,
+            topic_name,
+            audience_type,
+            display_time,
+            like_count,
+            comment_count,
+            save_count,
+            accent_tone,
+            badge,
+            image_url,
+            anonymous_flag,
+            location,
+            created_at
+        ) VALUES (
+            #{postCode},
+            #{creatorUserId},
+            #{title},
+            #{content},
+            #{authorName},
+            #{authorHandle},
+            #{topicName},
+            #{audienceType},
+            #{displayTime},
+            #{likeCount},
+            #{commentCount},
+            #{saveCount},
+            #{accentTone},
+            #{badge},
+            #{imageUrl},
+            #{anonymousFlag},
+            #{location},
+            #{createdAt}
+        )
+    </insert>
+
+    <select id="selectPostByCode" resultType="com.whu.treehole.infra.model.PostData">
+        SELECT p.id,
+               p.post_code,
+               p.creator_user_id,
+               p.title,
+               p.content,
+               p.author_name,
+               p.author_handle,
+               p.topic_name,
+               p.audience_type,
+               p.display_time,
+               p.like_count,
+               p.comment_count,
+               p.save_count,
+               p.accent_tone,
+               p.badge,
+               p.image_url,
+               p.anonymous_flag,
+               p.location,
+               p.created_at,
+               COALESCE(i.liked, 0) AS liked,
+               COALESCE(i.saved, 0) AS saved
+        FROM posts p
+                 LEFT JOIN post_interactions i ON i.post_id = p.id AND i.user_id = #{userId}
+        WHERE p.post_code = #{postCode}
+    </select>
+
+    <select id="selectInteractionState" resultType="com.whu.treehole.infra.model.InteractionStateData">
+        SELECT post_id,
+               user_id,
+               liked,
+               saved
+        FROM post_interactions
+        WHERE user_id = #{userId}
+          AND post_id = (SELECT id FROM posts WHERE post_code = #{postCode})
+    </select>
+
+    <insert id="insertInteraction">
+        INSERT INTO post_interactions (user_id, post_id, liked, saved, updated_at)
+        VALUES (#{userId}, #{postId}, #{liked}, #{saved}, NOW())
+    </insert>
+
+    <update id="updateInteraction">
+        UPDATE post_interactions
+        SET liked = #{liked},
+            saved = #{saved},
+            updated_at = NOW()
+        WHERE user_id = #{userId}
+          AND post_id = #{postId}
+    </update>
+
+    <update id="updatePostLikeCount">
+        UPDATE posts
+        SET like_count = GREATEST(like_count + #{delta}, 0)
+        WHERE id = #{postId}
+    </update>
+
+    <update id="updatePostSaveCount">
+        UPDATE posts
+        SET save_count = GREATEST(save_count + #{delta}, 0)
+        WHERE id = #{postId}
+    </update>
+
+    <select id="selectFollowState" resultType="com.whu.treehole.infra.model.FollowStateData">
+        SELECT contact_id,
+               user_id,
+               followed
+        FROM user_follow_contacts
+        WHERE user_id = #{userId}
+          AND contact_id = (SELECT id FROM alumni_contacts WHERE contact_code = #{contactCode})
+    </select>
+
+    <insert id="insertFollowState">
+        INSERT INTO user_follow_contacts (user_id, contact_id, followed, updated_at)
+        VALUES (#{userId}, #{contactId}, #{followed}, NOW())
+    </insert>
+
+    <update id="updateFollowState">
+        UPDATE user_follow_contacts
+        SET followed = #{followed},
+            updated_at = NOW()
+        WHERE user_id = #{userId}
+          AND contact_id = #{contactId}
+    </update>
+
+    <select id="selectContactId" resultType="java.lang.Long">
+        SELECT id
+        FROM alumni_contacts
+        WHERE contact_code = #{contactCode}
+    </select>
+
+    <select id="selectConversationId" resultType="java.lang.Long">
+        SELECT id
+        FROM conversations
+        WHERE owner_user_id = #{userId}
+          AND conversation_code = #{conversationCode}
+    </select>
+
+    <insert id="insertMessage" parameterType="com.whu.treehole.infra.model.MessageData" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO messages (message_code, conversation_id, sender_type, text_content, display_time, created_at)
+        VALUES (#{messageCode}, #{conversationId}, #{senderType}, #{textContent}, #{displayTime}, #{createdAt})
+    </insert>
+
+    <update id="updateConversationAfterSend">
+        UPDATE conversations
+        SET last_message = #{lastMessage},
+            display_time = #{displayTime},
+            unread_count = 0,
+            sort_time = #{sortTime}
+        WHERE id = #{conversationId}
+    </update>
+
+    <update id="markConversationRead">
+        UPDATE conversations
+        SET unread_count = 0
+        WHERE owner_user_id = #{userId}
+          AND conversation_code = #{conversationCode}
+    </update>
+
+</mapper>

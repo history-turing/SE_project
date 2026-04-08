@@ -1,0 +1,251 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.whu.treehole.infra.mapper.PortalQueryMapper">
+
+    <select id="selectTopics" resultType="com.whu.treehole.infra.model.TopicData">
+        SELECT id,
+               topic_code,
+               name,
+               description,
+               heat_text,
+               destination_type,
+               accent_tone,
+               emoji,
+               sort_order
+        FROM topics
+        <where>
+            <if test="scope != null">
+                destination_type = #{scope}
+            </if>
+        </where>
+        ORDER BY sort_order ASC, id ASC
+    </select>
+
+    <select id="selectTopicTags" resultType="com.whu.treehole.infra.model.TopicTagData">
+        SELECT t.topic_code,
+               tt.tag_name,
+               tt.sort_order
+        FROM topic_tags tt
+                 INNER JOIN topics t ON t.id = tt.topic_id
+        <where>
+            <if test="scope != null">
+                t.destination_type = #{scope}
+            </if>
+        </where>
+        ORDER BY t.sort_order ASC, tt.sort_order ASC, tt.id ASC
+    </select>
+
+    <select id="selectRankings" resultType="com.whu.treehole.infra.model.RankingData">
+        SELECT ranking_code,
+               label,
+               heat_text,
+               sort_order
+        FROM topic_rankings
+        ORDER BY sort_order ASC, id ASC
+    </select>
+
+    <select id="selectNotices" resultType="com.whu.treehole.infra.model.NoticeData">
+        SELECT notice_code,
+               title,
+               meta,
+               sort_order
+        FROM notices
+        ORDER BY sort_order ASC, id ASC
+    </select>
+
+    <sql id="PostProjection">
+        p.id,
+        p.post_code,
+        p.creator_user_id,
+        p.title,
+        p.content,
+        p.author_name,
+        p.author_handle,
+        p.topic_name,
+        p.audience_type,
+        p.display_time,
+        p.like_count,
+        p.comment_count,
+        p.save_count,
+        p.accent_tone,
+        p.badge,
+        p.image_url,
+        p.anonymous_flag,
+        p.location,
+        p.created_at,
+        COALESCE(i.liked, 0) AS liked,
+        COALESCE(i.saved, 0) AS saved
+    </sql>
+
+    <select id="selectPosts" resultType="com.whu.treehole.infra.model.PostData">
+        SELECT
+        <include refid="PostProjection"/>
+        FROM posts p
+                 LEFT JOIN post_interactions i ON i.post_id = p.id AND i.user_id = #{userId}
+        <where>
+            p.audience_type = #{audience}
+            <if test="topic != null">
+                AND p.topic_name = #{topic}
+            </if>
+            <if test="keyword != null">
+                AND (
+                    p.title LIKE CONCAT('%', #{keyword}, '%')
+                        OR p.content LIKE CONCAT('%', #{keyword}, '%')
+                        OR p.author_name LIKE CONCAT('%', #{keyword}, '%')
+                        OR p.topic_name LIKE CONCAT('%', #{keyword}, '%')
+                    )
+            </if>
+        </where>
+        ORDER BY p.created_at DESC, p.id DESC
+    </select>
+
+    <select id="selectUserProfile" resultType="com.whu.treehole.infra.model.UserProfileData">
+        SELECT id,
+               user_code,
+               name,
+               tagline,
+               college,
+               grade_year,
+               bio,
+               avatar_url
+        FROM users
+        WHERE id = #{userId}
+    </select>
+
+    <select id="selectUserBadges" resultType="com.whu.treehole.infra.model.UserBadgeData">
+        SELECT badge_name,
+               sort_order
+        FROM user_badges
+        WHERE user_id = #{userId}
+        ORDER BY sort_order ASC, id ASC
+    </select>
+
+    <select id="selectUserStats" resultType="com.whu.treehole.infra.model.ProfileStatData">
+        SELECT stat_label,
+               stat_value,
+               sort_order
+        FROM user_profile_stats
+        WHERE user_id = #{userId}
+        ORDER BY sort_order ASC, id ASC
+    </select>
+
+    <select id="selectMyPosts" resultType="com.whu.treehole.infra.model.PostData">
+        SELECT
+        <include refid="PostProjection"/>
+        FROM posts p
+                 LEFT JOIN post_interactions i ON i.post_id = p.id AND i.user_id = #{userId}
+        WHERE p.creator_user_id = #{userId}
+        ORDER BY p.created_at DESC, p.id DESC
+    </select>
+
+    <select id="selectSavedPosts" resultType="com.whu.treehole.infra.model.PostData">
+        SELECT
+        <include refid="PostProjection"/>
+        FROM posts p
+                 INNER JOIN post_interactions i ON i.post_id = p.id
+        WHERE i.user_id = #{userId}
+          AND i.saved = 1
+        ORDER BY p.created_at DESC, p.id DESC
+    </select>
+
+    <select id="selectStories" resultType="com.whu.treehole.infra.model.StoryData">
+        SELECT story_code,
+               title,
+               meta,
+               sort_order
+        FROM alumni_stories
+        ORDER BY sort_order ASC, id ASC
+    </select>
+
+    <select id="selectContacts" resultType="com.whu.treehole.infra.model.ContactData">
+        SELECT c.id,
+               c.contact_code,
+               c.name,
+               c.meta,
+               c.focus,
+               c.avatar_url,
+               COALESCE(f.followed, 0) AS followed,
+               c.sort_order
+        FROM alumni_contacts c
+                 LEFT JOIN user_follow_contacts f ON f.contact_id = c.id AND f.user_id = #{userId}
+        ORDER BY c.sort_order ASC, c.id ASC
+    </select>
+
+    <select id="selectConversations" resultType="com.whu.treehole.infra.model.ConversationData">
+        SELECT id,
+               conversation_code,
+               peer_name,
+               peer_subtitle,
+               peer_avatar_url,
+               last_message,
+               display_time,
+               unread_count,
+               sort_time
+        FROM conversations
+        WHERE owner_user_id = #{userId}
+        ORDER BY sort_time DESC, id DESC
+    </select>
+
+    <select id="selectMessages" resultType="com.whu.treehole.infra.model.MessageData">
+        SELECT m.id,
+               m.message_code,
+               m.conversation_id,
+               c.conversation_code,
+               m.sender_type,
+               m.text_content,
+               m.display_time,
+               m.created_at
+        FROM messages m
+                 INNER JOIN conversations c ON c.id = m.conversation_id
+        WHERE c.conversation_code IN
+        <foreach collection="conversationCodes" item="code" open="(" separator="," close=")">
+            #{code}
+        </foreach>
+        ORDER BY m.created_at ASC, m.id ASC
+    </select>
+
+    <select id="selectConversation" resultType="com.whu.treehole.infra.model.ConversationData">
+        SELECT id,
+               conversation_code,
+               peer_name,
+               peer_subtitle,
+               peer_avatar_url,
+               last_message,
+               display_time,
+               unread_count,
+               sort_time
+        FROM conversations
+        WHERE owner_user_id = #{userId}
+          AND conversation_code = #{conversationCode}
+    </select>
+
+    <select id="selectConversationMessages" resultType="com.whu.treehole.infra.model.MessageData">
+        SELECT m.id,
+               m.message_code,
+               m.conversation_id,
+               c.conversation_code,
+               m.sender_type,
+               m.text_content,
+               m.display_time,
+               m.created_at
+        FROM messages m
+                 INNER JOIN conversations c ON c.id = m.conversation_id
+        WHERE c.owner_user_id = #{userId}
+          AND c.conversation_code = #{conversationCode}
+        ORDER BY m.created_at ASC, m.id ASC
+    </select>
+
+    <select id="countPostsByAudience" resultType="java.lang.Integer">
+        SELECT COUNT(1)
+        FROM posts
+        WHERE audience_type = #{audience}
+    </select>
+
+    <select id="countTopics" resultType="java.lang.Integer">
+        SELECT COUNT(1)
+        FROM topics
+    </select>
+
+</mapper>

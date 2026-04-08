@@ -1,0 +1,6 @@
+spring:
+  sql:
+    init:
+      mode: ${TREEHOLE_SQL_INIT_MODE:always}
+      schema-locations: classpath:db/schema.sql
+      data-locations: classpath:db/data.sql
