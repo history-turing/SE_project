@@ -15,6 +15,7 @@
 - 部署配置新增 SMTP 与认证时效参数。
 - 修复 SMTP 发信时 `From` 地址可能为空的问题，默认回退到 `spring.mail.username`。
 - 补充 QQ SMTP 的 STARTTLS/SSL 参数与超时配置，便于排查验证码发送失败。
+- 后端运行配置改为支持 Docker 环境变量注入数据库、Redis、SMTP 与 SQL 初始化策略。
 
 ## [0.1.0] - 2026-04-08
 

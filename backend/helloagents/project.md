@@ -19,9 +19,10 @@
 ---
 
 ## 配置约定
-- MySQL 与 Redis 连接配置位于 `backend/whu-treehole-server/src/main/resources/application.yml`。
+- MySQL 与 Redis 连接配置位于 `backend/whu-treehole-server/src/main/resources/application.yml`，运行时优先读取 `TREEHOLE_DB_*` 和 `TREEHOLE_REDIS_*` 环境变量。
 - 本地 SQL 初始化位于 `backend/whu-treehole-server/src/main/resources/application-local.yml`。
-- 邮箱 SMTP 与认证时效配置同样位于 `application.yml` 的 `spring.mail` 和 `treehole.auth` 节点。
+- Docker 部署时应通过 `TREEHOLE_SQL_INIT_MODE=never` 禁用应用内初始化，改由 MySQL 容器导入 `docker/se_project.sql`。
+- 邮箱 SMTP 与认证时效配置同样位于 `application.yml` 的 `spring.mail` 和 `treehole.auth` 节点，敏感值通过环境变量注入。
 - 本地没有 SMTP 时，可通过 `TREEHOLE_AUTH_MOCK_EMAIL_ENABLED=true` 使用日志模拟验证码发送。
 
 ---

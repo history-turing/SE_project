@@ -5,14 +5,14 @@ spring:
     default: local
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
-    url: jdbc:mysql://localhost:3306/se_project?useUnicode=true&characterEncoding=UTF-8&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true&useSSL=false
-    username: root
-    password: jwdyszm0220
+    url: jdbc:mysql://${TREEHOLE_DB_HOST:localhost}:${TREEHOLE_DB_PORT:3306}/${TREEHOLE_DB_NAME:se_project}?useUnicode=true&characterEncoding=UTF-8&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true&useSSL=false
+    username: ${TREEHOLE_DB_USERNAME:root}
+    password: ${TREEHOLE_DB_PASSWORD:jwdyszm0220}
   data:
     redis:
       host: ${TREEHOLE_REDIS_HOST:localhost}
       port: ${TREEHOLE_REDIS_PORT:6379}
-      password: jwdyszm0220
+      password: ${TREEHOLE_REDIS_PASSWORD:jwdyszm0220}
       timeout: 2000ms
   mail:
     host: ${TREEHOLE_MAIL_HOST:smtp.qq.com}

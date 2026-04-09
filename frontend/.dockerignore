@@ -1,0 +1,5 @@
+dist
+helloagents
+node_modules
+.npm-cache
+Dockerfile
