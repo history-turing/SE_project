@@ -6,6 +6,9 @@
 
 ## [Unreleased]
 
+### 变更
+- 将根目录 Compose 文件改为 `version: "2.4"` 格式，兼容未安装 Compose 插件的旧版 `docker-compose`。
+
 ## [0.1.0] - 2026-04-09
 
 ### 新增

@@ -1,4 +1,4 @@
-name: whu-treehole
+version: "2.4"
 
 services:
   mysql:
