@@ -12,6 +12,8 @@ import com.whu.treehole.infra.mapper.PortalQueryMapper;
 import com.whu.treehole.infra.model.InteractionStateData;
 import com.whu.treehole.infra.model.PostData;
 import com.whu.treehole.infra.model.UserProfileData;
+import com.whu.treehole.server.support.PostTimeFormatter;
+import java.time.Clock;
 import java.time.LocalDateTime;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Caching;
@@ -23,10 +25,17 @@ public class PostCommandService {
 
     private final PortalCommandMapper portalCommandMapper;
     private final PortalQueryMapper portalQueryMapper;
+    private final PostTimeFormatter postTimeFormatter;
+    private final Clock clock;
 
-    public PostCommandService(PortalCommandMapper portalCommandMapper, PortalQueryMapper portalQueryMapper) {
+    public PostCommandService(PortalCommandMapper portalCommandMapper,
+                              PortalQueryMapper portalQueryMapper,
+                              PostTimeFormatter postTimeFormatter,
+                              Clock clock) {
         this.portalCommandMapper = portalCommandMapper;
         this.portalQueryMapper = portalQueryMapper;
+        this.postTimeFormatter = postTimeFormatter;
+        this.clock = clock;
     }
 
     @Transactional
@@ -57,14 +66,14 @@ public class PostCommandService {
                 : profile.getCollege() + " · " + profile.getGradeYear());
         postData.setTopicName(request.topic().trim());
         postData.setAudienceType(audienceType.code());
-        postData.setDisplayTime("刚刚");
+        postData.setCreatedAt(LocalDateTime.now(clock));
+        postData.setDisplayTime(postTimeFormatter.format(postData.getCreatedAt(), "刚刚"));
         postData.setLikeCount(0);
         postData.setCommentCount(0);
         postData.setSaveCount(0);
         postData.setAccentTone(audienceType == AudienceType.ALUMNI ? "jade" : "rose");
         postData.setBadge(audienceType == AudienceType.ALUMNI ? "新发布" : null);
         postData.setAnonymousFlag(request.anonymous());
-        postData.setCreatedAt(LocalDateTime.now());
         portalCommandMapper.insertPost(postData);
 
         return toPostCard(requirePost(postData.getPostCode(), userId));
@@ -134,7 +143,7 @@ public class PostCommandService {
                 postData.getAuthorHandle(),
                 postData.getTopicName(),
                 audience,
-                postData.getDisplayTime(),
+                postTimeFormatter.format(postData.getCreatedAt(), postData.getDisplayTime()),
                 postData.getLikeCount(),
                 postData.getCommentCount(),
                 postData.getSaveCount(),

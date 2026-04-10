@@ -33,6 +33,7 @@ import com.whu.treehole.infra.model.TopicData;
 import com.whu.treehole.infra.model.TopicTagData;
 import com.whu.treehole.infra.model.UserBadgeData;
 import com.whu.treehole.infra.model.UserProfileData;
+import com.whu.treehole.server.support.PostTimeFormatter;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedHashMap;
@@ -47,9 +48,11 @@ import org.springframework.stereotype.Service;
 public class PageQueryService {
 
     private final PortalQueryMapper portalQueryMapper;
+    private final PostTimeFormatter postTimeFormatter;
 
-    public PageQueryService(PortalQueryMapper portalQueryMapper) {
+    public PageQueryService(PortalQueryMapper portalQueryMapper, PostTimeFormatter postTimeFormatter) {
         this.portalQueryMapper = portalQueryMapper;
+        this.postTimeFormatter = postTimeFormatter;
     }
 
     @Cacheable(cacheNames = "homePage", key = "#userId + ':' + (#topic == null ? '' : #topic) + ':' + (#keyword == null ? '' : #keyword)")
@@ -231,7 +234,7 @@ public class PageQueryService {
                 postData.getAuthorHandle(),
                 postData.getTopicName(),
                 audience,
-                postData.getDisplayTime(),
+                postTimeFormatter.format(postData.getCreatedAt(), postData.getDisplayTime()),
                 defaultInt(postData.getLikeCount()),
                 defaultInt(postData.getCommentCount()),
                 defaultInt(postData.getSaveCount()),
