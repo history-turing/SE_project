@@ -1,92 +1,42 @@
-version: "2.4"
-
+version: '3'
 services:
-  mysql:
-    image: mysql:8.0.41
-    restart: unless-stopped
-    command:
-      - --character-set-server=utf8mb4
-      - --collation-server=utf8mb4_unicode_ci
-    environment:
-      TZ: Asia/Shanghai
-      MYSQL_DATABASE: ${MYSQL_DATABASE:-se_project}
-      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-jwdyszm0220}
-    volumes:
-      - mysql-data:/var/lib/mysql
-      - ./docker/se_project.sql:/docker-entrypoint-initdb.d/01-se_project.sql:ro
-    healthcheck:
-      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -uroot -p$$MYSQL_ROOT_PASSWORD --silent"]
-      interval: 10s
-      timeout: 5s
-      retries: 10
-      start_period: 20s
-
-  redis:
-    image: redis:7.4-alpine
-    restart: unless-stopped
-    command:
-      - redis-server
-      - --appendonly
-      - "yes"
-      - --requirepass
-      - ${REDIS_PASSWORD:-jwdyszm0220}
-    environment:
-      TZ: Asia/Shanghai
-      REDIS_PASSWORD: ${REDIS_PASSWORD:-jwdyszm0220}
-    volumes:
-      - redis-data:/data
-    healthcheck:
-      test: ["CMD-SHELL", "redis-cli -a \"$$REDIS_PASSWORD\" ping | grep PONG"]
-      interval: 10s
-      timeout: 5s
-      retries: 10
-      start_period: 10s
+  frontend:
+    build: ./frontend
+    ports:
+      - "80:80"
 
   backend:
-    build:
-      context: ./backend
-      dockerfile: Dockerfile
-    restart: unless-stopped
-    environment:
-      TZ: Asia/Shanghai
-      TREEHOLE_DB_HOST: mysql
-      TREEHOLE_DB_PORT: 3306
-      TREEHOLE_DB_NAME: ${MYSQL_DATABASE:-se_project}
-      TREEHOLE_DB_USERNAME: root
-      TREEHOLE_DB_PASSWORD: ${MYSQL_ROOT_PASSWORD:-jwdyszm0220}
-      TREEHOLE_REDIS_HOST: redis
-      TREEHOLE_REDIS_PORT: 6379
-      TREEHOLE_REDIS_PASSWORD: ${REDIS_PASSWORD:-jwdyszm0220}
-      TREEHOLE_SERVER_PORT: 8080
-      TREEHOLE_SQL_INIT_MODE: never
-      TREEHOLE_AUTH_MOCK_EMAIL_ENABLED: ${TREEHOLE_AUTH_MOCK_EMAIL_ENABLED:-false}
-      TREEHOLE_MAIL_HOST: ${TREEHOLE_MAIL_HOST:-smtp.qq.com}
-      TREEHOLE_MAIL_PORT: ${TREEHOLE_MAIL_PORT:-587}
-      TREEHOLE_MAIL_USERNAME: ${TREEHOLE_MAIL_USERNAME:-2953695254@qq.com}
-      TREEHOLE_MAIL_PASSWORD: ${TREEHOLE_MAIL_PASSWORD:-xpmdhbwnkrkidfei}
-      TREEHOLE_MAIL_SMTP_AUTH: ${TREEHOLE_MAIL_SMTP_AUTH:-true}
-      TREEHOLE_MAIL_SMTP_STARTTLS: ${TREEHOLE_MAIL_SMTP_STARTTLS:-true}
-      TREEHOLE_MAIL_SMTP_SSL_TRUST: ${TREEHOLE_MAIL_SMTP_SSL_TRUST:-smtp.qq.com}
-    depends_on:
-      mysql:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-    expose:
-      - "8080"
-
-  frontend:
-    build:
-      context: ./frontend
-      dockerfile: Dockerfile
-      args:
-        VITE_API_BASE_URL: /api/v1
-    restart: unless-stopped
-    depends_on:
-      - backend
+    build: ./backend
     ports:
-      - "${FRONTEND_PORT:-80}:80"
+      - "8080:8080"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/mydb?useSSL=false&serverTimezone=Asia/Shanghai
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: mypassword
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+    depends_on:
+      - mysql
+      - redis
+
+  mysql:
+    image: mysql:8
+    container_name: mysql
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: mypassword
+      MYSQL_DATABASE: mydb
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql-data:/var/lib/mysql
+
+  redis:
+    image: redis:7
+    container_name: redis
+    restart: always
+    ports:
+      - "6379:6379"
 
 volumes:
   mysql-data:
-  redis-data:

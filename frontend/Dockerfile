@@ -1,22 +1,13 @@
-FROM node:20-alpine AS builder
-
+# 构建阶段
+FROM node:20 AS builder
 WORKDIR /app
-
-COPY package.json package-lock.json ./
-RUN npm ci
-
+COPY package*.json ./
+RUN npm install
 COPY . .
-
-ARG VITE_API_BASE_URL=/api/v1
-ENV VITE_API_BASE_URL=${VITE_API_BASE_URL}
-
 RUN npm run build
 
-FROM nginx:1.27-alpine
-
-COPY nginx.conf /etc/nginx/conf.d/default.conf
-COPY --from=builder /app/dist /usr/share/nginx/html
-
+# 生产阶段
+FROM nginx:alpine
+COPY --from=builder /app/build /usr/share/nginx/html
 EXPOSE 80
-
 CMD ["nginx", "-g", "daemon off;"]

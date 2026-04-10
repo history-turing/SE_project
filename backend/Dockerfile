@@ -1,35 +1,14 @@
-FROM maven:3.9.9-eclipse-temurin-17 AS builder
-
-WORKDIR /workspace
-
-COPY pom.xml settings.xml ./
-COPY whu-treehole-common/pom.xml whu-treehole-common/pom.xml
-COPY whu-treehole-domain/pom.xml whu-treehole-domain/pom.xml
-COPY whu-treehole-infra/pom.xml whu-treehole-infra/pom.xml
-COPY whu-treehole-server/pom.xml whu-treehole-server/pom.xml
-
-RUN mvn -q -s settings.xml -pl whu-treehole-server -am dependency:go-offline
-
-COPY whu-treehole-common whu-treehole-common
-COPY whu-treehole-domain whu-treehole-domain
-COPY whu-treehole-infra whu-treehole-infra
-COPY whu-treehole-server whu-treehole-server
-
-RUN mvn -q -s settings.xml -pl whu-treehole-server -am clean package -DskipTests
-RUN find /workspace/whu-treehole-server/target -maxdepth 1 -name "whu-treehole-server-*.jar" ! -name "*.jar.original" -exec cp {} /workspace/app.jar \;
-
-FROM eclipse-temurin:17-jre-alpine
-
+# 构建阶段
+FROM maven:3.9.2-openjdk-17 AS builder
 WORKDIR /app
+COPY pom.xml ./
+RUN mvn dependency:go-offline
+COPY src ./src
+RUN mvn clean package -DskipTests
 
-RUN apk add --no-cache tzdata \
-    && addgroup -S spring \
-    && adduser -S spring -G spring
-
-COPY --from=builder /workspace/app.jar /app/app.jar
-
-USER spring
-
+# 生产阶段
+FROM openjdk:17-jdk-slim
+WORKDIR /app
+COPY --from=builder /app/target/*.jar app.jar
 EXPOSE 8080
-
-ENTRYPOINT ["java", "-jar", "/app/app.jar"]
+CMD ["java", "-jar", "app.jar"]
