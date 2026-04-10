@@ -1,5 +1,5 @@
-﻿import { useState } from 'react';
-import { NavLink, Outlet } from 'react-router-dom';
+import { useEffect, useState } from 'react';
+import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { useAppContext } from '../context/AppContext';
 import { useAuthContext } from '../context/AuthContext';
 import { navItems } from '../data/siteData';
@@ -10,6 +10,22 @@ export function AppShell() {
   const { composePost, profile } = useAppContext();
   const { logout, user } = useAuthContext();
   const [openComposer, setOpenComposer] = useState(false);
+  const [searchKeyword, setSearchKeyword] = useState('');
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  useEffect(() => {
+    const keyword = new URLSearchParams(location.search).get('q') ?? '';
+    setSearchKeyword(location.pathname === '/search' ? keyword : '');
+  }, [location.pathname, location.search]);
+
+  function submitSearch() {
+    const next = searchKeyword.trim();
+    if (!next) {
+      return;
+    }
+    navigate(`/search?q=${encodeURIComponent(next)}`);
+  }
 
   return (
     <div className="app-shell">
@@ -37,7 +53,16 @@ export function AppShell() {
           <div className="topbar__actions">
             <label className="search-bar">
               <Icon name="search" className="icon" />
-              <input placeholder="搜索树洞里的关键词..." />
+              <input
+                value={searchKeyword}
+                placeholder="搜索树洞里的关键词..."
+                onChange={(event) => setSearchKeyword(event.target.value)}
+                onKeyDown={(event) => {
+                  if (event.key === 'Enter') {
+                    submitSearch();
+                  }
+                }}
+              />
             </label>
             <button className="ghost-button" type="button" aria-label="通知">
               <Icon name="bell" className="icon" />

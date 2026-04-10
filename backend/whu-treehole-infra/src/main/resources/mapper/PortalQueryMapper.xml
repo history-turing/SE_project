@@ -173,6 +173,97 @@
         ORDER BY c.sort_order ASC, c.id ASC
     </select>
 
+    <sql id="PostCommentProjection">
+        c.id,
+        c.comment_code,
+        c.post_id,
+        c.user_id,
+        c.parent_comment_id,
+        c.root_comment_id,
+        c.reply_to_user_id,
+        c.author_name,
+        c.author_handle,
+        c.content,
+        c.deleted_flag,
+        c.created_at,
+        c.updated_at
+    </sql>
+
+    <select id="selectCommentsByPostCode" resultType="com.whu.treehole.infra.model.PostCommentData">
+        SELECT
+        <include refid="PostCommentProjection"/>
+        FROM post_comments c
+                 INNER JOIN posts p ON p.id = c.post_id
+        WHERE p.post_code = #{postCode}
+          AND c.deleted_flag = 0
+        ORDER BY COALESCE(c.root_comment_id, c.id) ASC,
+                 CASE WHEN c.parent_comment_id IS NULL THEN 0 ELSE 1 END ASC,
+                 c.created_at ASC,
+                 c.id ASC
+    </select>
+
+    <select id="selectCommentsByPostId" resultType="com.whu.treehole.infra.model.PostCommentData">
+        SELECT
+        <include refid="PostCommentProjection"/>
+        FROM post_comments c
+        WHERE c.post_id = #{postId}
+          AND c.deleted_flag = 0
+        ORDER BY COALESCE(c.root_comment_id, c.id) ASC,
+                 CASE WHEN c.parent_comment_id IS NULL THEN 0 ELSE 1 END ASC,
+                 c.created_at ASC,
+                 c.id ASC
+    </select>
+
+    <select id="selectCommentByCode" resultType="com.whu.treehole.infra.model.PostCommentData">
+        SELECT
+        <include refid="PostCommentProjection"/>
+        FROM post_comments c
+                 INNER JOIN posts p ON p.id = c.post_id
+        WHERE p.post_code = #{postCode}
+          AND c.comment_code = #{commentCode}
+          AND c.deleted_flag = 0
+    </select>
+
+    <select id="searchPosts" resultType="com.whu.treehole.infra.model.PostData">
+        SELECT
+        <include refid="PostProjection"/>
+        FROM posts p
+                 LEFT JOIN post_interactions i ON i.post_id = p.id AND i.user_id = #{userId}
+        WHERE p.title LIKE CONCAT('%', #{keyword}, '%')
+           OR p.content LIKE CONCAT('%', #{keyword}, '%')
+           OR p.author_name LIKE CONCAT('%', #{keyword}, '%')
+           OR p.topic_name LIKE CONCAT('%', #{keyword}, '%')
+        ORDER BY p.created_at DESC, p.id DESC
+    </select>
+
+    <select id="searchStories" resultType="com.whu.treehole.infra.model.StoryData">
+        SELECT story_code,
+               title,
+               meta,
+               sort_order
+        FROM alumni_stories
+        WHERE title LIKE CONCAT('%', #{keyword}, '%')
+           OR meta LIKE CONCAT('%', #{keyword}, '%')
+        ORDER BY sort_order ASC, id ASC
+    </select>
+
+    <select id="searchContacts" resultType="com.whu.treehole.infra.model.ContactData">
+        SELECT c.id,
+               c.contact_code,
+               c.name,
+               c.meta,
+               c.focus,
+               c.avatar_url,
+               COALESCE(f.followed, 0) AS followed,
+               c.sort_order
+        FROM alumni_contacts c
+                 LEFT JOIN user_follow_contacts f ON f.contact_id = c.id AND f.user_id = #{userId}
+        WHERE c.name LIKE CONCAT('%', #{keyword}, '%')
+           OR c.meta LIKE CONCAT('%', #{keyword}, '%')
+           OR c.focus LIKE CONCAT('%', #{keyword}, '%')
+        ORDER BY c.sort_order ASC, c.id ASC
+    </select>
+
     <select id="selectConversations" resultType="com.whu.treehole.infra.model.ConversationData">
         SELECT id,
                conversation_code,

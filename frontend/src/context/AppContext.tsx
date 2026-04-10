@@ -53,6 +53,7 @@ interface AppStateValue {
   composePost: (payload: ComposePayload) => Promise<boolean>;
   toggleLike: (postId: string) => Promise<void>;
   toggleSave: (postId: string) => Promise<void>;
+  setPostCommentCount: (postId: string, count: number) => void;
   toggleFollow: (userId: string) => Promise<void>;
   selectConversation: (conversationId: string) => Promise<void>;
   sendMessage: (text: string) => Promise<void>;
@@ -205,6 +206,13 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }
   }
 
+  function setPostCommentCount(postId: string, count: number) {
+    updatePostEverywhere(postId, (post) => ({
+      ...post,
+      comments: count,
+    }));
+  }
+
   async function composePost(payload: ComposePayload) {
     if (!payload.content.trim()) {
       return false;
@@ -288,6 +296,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         composePost,
         toggleLike,
         toggleSave,
+        setPostCommentCount,
         toggleFollow,
         selectConversation,
         sendMessage,

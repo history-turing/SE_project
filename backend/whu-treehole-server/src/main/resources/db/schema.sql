@@ -98,6 +98,29 @@ CREATE TABLE IF NOT EXISTS post_interactions (
     CONSTRAINT fk_post_interactions_post FOREIGN KEY (post_id) REFERENCES posts (id)
 );
 
+CREATE TABLE IF NOT EXISTS post_comments (
+    id BIGINT PRIMARY KEY AUTO_INCREMENT,
+    comment_code VARCHAR(64) NOT NULL UNIQUE,
+    post_id BIGINT NOT NULL,
+    user_id BIGINT NOT NULL,
+    parent_comment_id BIGINT NULL,
+    root_comment_id BIGINT NULL,
+    reply_to_user_id BIGINT NULL,
+    author_name VARCHAR(64) NOT NULL,
+    author_handle VARCHAR(128) NOT NULL,
+    content VARCHAR(1000) NOT NULL,
+    deleted_flag TINYINT(1) NOT NULL DEFAULT 0,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    KEY idx_post_comments_post_id (post_id),
+    KEY idx_post_comments_root_id (root_comment_id),
+    KEY idx_post_comments_parent_id (parent_comment_id),
+    CONSTRAINT fk_post_comments_post FOREIGN KEY (post_id) REFERENCES posts (id),
+    CONSTRAINT fk_post_comments_user FOREIGN KEY (user_id) REFERENCES users (id),
+    CONSTRAINT fk_post_comments_parent FOREIGN KEY (parent_comment_id) REFERENCES post_comments (id),
+    CONSTRAINT fk_post_comments_root FOREIGN KEY (root_comment_id) REFERENCES post_comments (id)
+);
+
 CREATE TABLE IF NOT EXISTS alumni_stories (
     id BIGINT PRIMARY KEY AUTO_INCREMENT,
     story_code VARCHAR(64) NOT NULL UNIQUE,

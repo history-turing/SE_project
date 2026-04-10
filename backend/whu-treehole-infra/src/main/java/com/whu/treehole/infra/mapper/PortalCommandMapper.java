@@ -5,6 +5,7 @@ package com.whu.treehole.infra.mapper;
 import com.whu.treehole.infra.model.FollowStateData;
 import com.whu.treehole.infra.model.InteractionStateData;
 import com.whu.treehole.infra.model.MessageData;
+import com.whu.treehole.infra.model.PostCommentData;
 import com.whu.treehole.infra.model.PostData;
 import java.time.LocalDateTime;
 import org.apache.ibatis.annotations.Param;
@@ -34,6 +35,12 @@ public interface PortalCommandMapper {
     void updatePostLikeCount(@Param("postId") Long postId, @Param("delta") int delta);
 
     void updatePostSaveCount(@Param("postId") Long postId, @Param("delta") int delta);
+
+    void insertPostComment(PostCommentData postCommentData);
+
+    PostCommentData selectCommentById(@Param("commentId") Long commentId);
+
+    void increasePostCommentCount(@Param("postId") Long postId);
 
     FollowStateData selectFollowState(@Param("userId") Long userId,
                                       @Param("contactCode") String contactCode);

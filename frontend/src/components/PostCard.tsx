@@ -1,15 +1,18 @@
-﻿import { useAppContext } from '../context/AppContext';
+import { useState } from 'react';
+import { useAppContext } from '../context/AppContext';
 import type { FeedPost } from '../types';
 import { Icon } from './Icon';
+import { PostCommentsPanel } from './PostCommentsPanel';
 
 interface PostCardProps {
   post: FeedPost;
 }
 
 export function PostCard({ post }: PostCardProps) {
-  const { likedIds, savedIds, toggleLike, toggleSave } = useAppContext();
+  const { likedIds, savedIds, toggleLike, toggleSave, setPostCommentCount } = useAppContext();
   const liked = likedIds.includes(post.id);
   const saved = savedIds.includes(post.id);
+  const [commentsOpen, setCommentsOpen] = useState(false);
 
   return (
     <article className={`post-card tone-${post.accent}`}>
@@ -50,10 +53,14 @@ export function PostCard({ post }: PostCardProps) {
           <Icon name="heart" className="icon" />
           <span>{post.likes}</span>
         </button>
-        <span className="icon-button is-static">
+        <button
+          className={`icon-button ${commentsOpen ? 'is-active' : ''}`}
+          type="button"
+          onClick={() => setCommentsOpen((current) => !current)}
+        >
           <Icon name="chat" className="icon" />
           <span>{post.comments}</span>
-        </span>
+        </button>
         <button
           className={`icon-button ${saved ? 'is-active' : ''}`}
           type="button"
@@ -63,6 +70,14 @@ export function PostCard({ post }: PostCardProps) {
           <span>{post.saves}</span>
         </button>
       </div>
+
+      {commentsOpen ? (
+        <PostCommentsPanel
+          postId={post.id}
+          initialCount={post.comments}
+          onCountChange={(count) => setPostCommentCount(post.id, count)}
+        />
+      ) : null}
     </article>
   );
 }

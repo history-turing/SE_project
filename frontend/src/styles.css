@@ -521,6 +521,18 @@ button {
   gap: 16px;
 }
 
+.search-page__toolbar {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: center;
+}
+
+.search-summary,
+.search-empty {
+  color: var(--muted);
+}
+
 .post-card {
   padding: 24px;
 }
@@ -606,6 +618,15 @@ button {
   margin-top: 18px;
 }
 
+.search-post-stats {
+  margin-top: 16px;
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+  color: var(--muted);
+  font-size: 0.92rem;
+}
+
 .icon-button {
   min-width: 92px;
   padding: 10px 14px;
@@ -626,6 +647,82 @@ button {
 
 .icon-button.is-static {
   cursor: default;
+}
+
+.post-comments {
+  margin-top: 18px;
+  padding-top: 18px;
+  border-top: 1px solid var(--line);
+  display: grid;
+  gap: 14px;
+}
+
+.post-comments__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.post-comments__head span,
+.post-comment__header span,
+.post-comment__header small {
+  color: var(--muted);
+}
+
+.post-comments__composer,
+.post-comment__reply-box {
+  display: grid;
+  gap: 10px;
+}
+
+.post-comments__composer textarea,
+.post-comment__reply-box textarea {
+  min-height: 90px;
+  padding: 14px 16px;
+  resize: vertical;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.92);
+}
+
+.post-comments__list,
+.post-comment__reply-list {
+  display: grid;
+  gap: 12px;
+}
+
+.post-comment {
+  padding: 16px;
+  border-radius: var(--radius-lg);
+  background: rgba(255, 255, 255, 0.78);
+  border: 1px solid var(--line);
+}
+
+.post-comment--reply {
+  background: rgba(255, 249, 247, 0.92);
+}
+
+.post-comment__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.post-comment__header div {
+  display: grid;
+  gap: 4px;
+}
+
+.post-comment p {
+  margin: 12px 0;
+  line-height: 1.7;
+}
+
+.post-comment__reply-list {
+  margin-top: 12px;
+  padding-left: 16px;
 }
 
 .topic-grid,
@@ -1003,6 +1100,10 @@ button {
   .message-compose {
     grid-template-columns: 1fr;
     display: grid;
+  }
+
+  .search-page__toolbar {
+    grid-template-columns: 1fr;
   }
 
   .bubble {

@@ -1,4 +1,4 @@
-﻿import type {
+import type {
   AlumniContact,
   Audience,
   AuthUser,
@@ -6,7 +6,10 @@
   Conversation,
   FeedPost,
   NoticeItem,
+  PostComment,
+  PostCommentsData,
   RankingItem,
+  SearchResult,
   StoryCard,
   TopicGroup,
   UserProfile,
@@ -123,6 +126,10 @@ export function getProfilePage() {
   return request<ProfilePageData>('/pages/profile');
 }
 
+export function searchAll(keyword: string) {
+  return request<SearchResult>(`/search?q=${encodeURIComponent(keyword)}`);
+}
+
 export function createPost(payload: ComposePayload) {
   return request<FeedPost>('/posts', {
     method: 'POST',
@@ -142,6 +149,24 @@ export function toggleLike(postId: string) {
 export function toggleSave(postId: string) {
   return request<ToggleResult>(`/posts/${postId}/saves/toggle`, {
     method: 'POST',
+  });
+}
+
+export function getPostComments(postId: string) {
+  return request<PostCommentsData>(`/posts/${postId}/comments`);
+}
+
+export function createPostComment(postId: string, content: string) {
+  return request<PostComment>(`/posts/${postId}/comments`, {
+    method: 'POST',
+    body: JSON.stringify({ content }),
+  });
+}
+
+export function createCommentReply(postId: string, commentId: string, content: string) {
+  return request<PostComment>(`/posts/${postId}/comments/${commentId}/replies`, {
+    method: 'POST',
+    body: JSON.stringify({ content }),
   });
 }
 

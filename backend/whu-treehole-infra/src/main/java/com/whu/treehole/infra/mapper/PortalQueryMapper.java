@@ -6,6 +6,7 @@ import com.whu.treehole.infra.model.ContactData;
 import com.whu.treehole.infra.model.ConversationData;
 import com.whu.treehole.infra.model.MessageData;
 import com.whu.treehole.infra.model.NoticeData;
+import com.whu.treehole.infra.model.PostCommentData;
 import com.whu.treehole.infra.model.PostData;
 import com.whu.treehole.infra.model.ProfileStatData;
 import com.whu.treehole.infra.model.RankingData;
@@ -45,6 +46,19 @@ public interface PortalQueryMapper {
     List<StoryData> selectStories();
 
     List<ContactData> selectContacts(@Param("userId") Long userId);
+
+    List<PostCommentData> selectCommentsByPostCode(@Param("postCode") String postCode);
+
+    List<PostCommentData> selectCommentsByPostId(@Param("postId") Long postId);
+
+    PostCommentData selectCommentByCode(@Param("postCode") String postCode,
+                                        @Param("commentCode") String commentCode);
+
+    List<PostData> searchPosts(@Param("keyword") String keyword, @Param("userId") Long userId);
+
+    List<StoryData> searchStories(@Param("keyword") String keyword);
+
+    List<ContactData> searchContacts(@Param("keyword") String keyword, @Param("userId") Long userId);
 
     List<ConversationData> selectConversations(@Param("userId") Long userId);
 

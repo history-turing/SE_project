@@ -7,6 +7,7 @@ import { AlumniPage } from './pages/AlumniPage';
 import { HomePage } from './pages/HomePage';
 import { LoginPage } from './pages/LoginPage';
 import { ProfilePage } from './pages/ProfilePage';
+import { SearchPage } from './pages/SearchPage';
 import { RegisterPage } from './pages/RegisterPage';
 import { TopicsPage } from './pages/TopicsPage';
 
@@ -78,6 +79,7 @@ export default function App() {
         <Route path="/topics" element={<TopicsPage />} />
         <Route path="/alumni" element={<AlumniPage />} />
         <Route path="/profile" element={<ProfilePage />} />
+        <Route path="/search" element={<SearchPage />} />
       </Route>
       <Route path="*" element={<Navigate replace to="/" />} />
     </Routes>

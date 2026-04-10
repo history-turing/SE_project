@@ -115,6 +115,60 @@
         WHERE id = #{postId}
     </update>
 
+    <insert id="insertPostComment" parameterType="com.whu.treehole.infra.model.PostCommentData" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO post_comments (
+            comment_code,
+            post_id,
+            user_id,
+            parent_comment_id,
+            root_comment_id,
+            reply_to_user_id,
+            author_name,
+            author_handle,
+            content,
+            deleted_flag,
+            created_at,
+            updated_at
+        ) VALUES (
+            #{commentCode},
+            #{postId},
+            #{userId},
+            #{parentCommentId},
+            #{rootCommentId},
+            #{replyToUserId},
+            #{authorName},
+            #{authorHandle},
+            #{content},
+            #{deletedFlag},
+            #{createdAt},
+            #{updatedAt}
+        )
+    </insert>
+
+    <select id="selectCommentById" resultType="com.whu.treehole.infra.model.PostCommentData">
+        SELECT id,
+               comment_code,
+               post_id,
+               user_id,
+               parent_comment_id,
+               root_comment_id,
+               reply_to_user_id,
+               author_name,
+               author_handle,
+               content,
+               deleted_flag,
+               created_at,
+               updated_at
+        FROM post_comments
+        WHERE id = #{commentId}
+    </select>
+
+    <update id="increasePostCommentCount">
+        UPDATE posts
+        SET comment_count = comment_count + 1
+        WHERE id = #{postId}
+    </update>
+
     <select id="selectFollowState" resultType="com.whu.treehole.infra.model.FollowStateData">
         SELECT contact_id,
                user_id,

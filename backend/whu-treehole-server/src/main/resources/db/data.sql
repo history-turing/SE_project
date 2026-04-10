@@ -68,6 +68,13 @@ INSERT IGNORE INTO post_interactions (id, user_id, post_id, liked, saved, update
 (3, 1, 5, 1, 1, '2026-04-08 12:00:00'),
 (4, 1, 8, 0, 1, '2026-04-08 12:00:00');
 
+INSERT IGNORE INTO post_comments (
+    id, comment_code, post_id, user_id, parent_comment_id, root_comment_id, reply_to_user_id,
+    author_name, author_handle, content, deleted_flag, created_at, updated_at
+) VALUES
+(1, 'comment-seed-root', 1, 1, NULL, NULL, NULL, '樱花味猫咪', '信息管理学院 · 2022', '春天的老斋舍真的很适合发呆。', 0, '2026-04-08 09:10:00', '2026-04-08 09:10:00'),
+(2, 'comment-seed-reply', 1, 1, 1, 1, 1, '樱花味猫咪', '信息管理学院 · 2022', '而且早上的光线特别好。', 0, '2026-04-08 09:15:00', '2026-04-08 09:15:00');
+
 INSERT IGNORE INTO alumni_stories (id, story_code, title, meta, sort_order) VALUES
 (1, 'story-1', '从珞珈山到硅谷', '2012 级 计算机学院 · 张校友', 1),
 (2, 'story-2', '支教归来的这一年', '2018 级 文学院 · 李校友', 2),

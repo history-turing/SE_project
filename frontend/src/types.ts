@@ -29,6 +29,24 @@ export interface FeedPost {
   saved?: boolean;
 }
 
+export interface PostComment {
+  id: string;
+  postId: string;
+  parentCommentCode?: string | null;
+  author: string;
+  handle: string;
+  content: string;
+  createdAt: string;
+  mine: boolean;
+  replyToUserName?: string | null;
+  replies: PostComment[];
+}
+
+export interface PostCommentsData {
+  comments: PostComment[];
+  total: number;
+}
+
 export interface TopicGroup {
   id: string;
   name: string;
@@ -65,6 +83,14 @@ export interface StoryCard {
   id: string;
   title: string;
   meta: string;
+}
+
+export interface SearchResult {
+  keyword: string;
+  total: number;
+  posts: FeedPost[];
+  stories: StoryCard[];
+  contacts: AlumniContact[];
 }
 
 export interface ProfileStat {
