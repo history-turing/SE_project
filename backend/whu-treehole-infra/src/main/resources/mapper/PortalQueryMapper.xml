@@ -339,7 +339,7 @@
         FROM posts
         WHERE audience_type = #{audience}
           AND created_at >= CURRENT_DATE()
-          AND created_at < DATE_ADD(CURRENT_DATE(), INTERVAL 1 DAY)
+          AND created_at &lt; DATE_ADD(CURRENT_DATE(), INTERVAL 1 DAY)
     </select>
 
     <select id="countTopics" resultType="java.lang.Integer">
