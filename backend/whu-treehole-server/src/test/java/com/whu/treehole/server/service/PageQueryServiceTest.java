@@ -49,7 +49,7 @@ class PageQueryServiceTest {
         when(portalQueryMapper.selectTopicTags(TopicScope.CAMPUS.name())).thenReturn(Collections.emptyList());
         when(portalQueryMapper.selectPosts(eq(AudienceType.HOME.code()), eq(null), eq(null), eq(1L)))
                 .thenReturn(Collections.singletonList(postData));
-        when(portalQueryMapper.countPostsByAudience(anyString())).thenReturn(0);
+        when(portalQueryMapper.countTodayPostsByAudience(anyString())).thenReturn(0);
         when(portalQueryMapper.countTopics()).thenReturn(0);
         when(portalQueryMapper.selectRankings()).thenReturn(Collections.emptyList());
         when(portalQueryMapper.selectNotices()).thenReturn(Collections.emptyList());
