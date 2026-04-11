@@ -7,6 +7,7 @@ import com.whu.treehole.infra.model.InteractionStateData;
 import com.whu.treehole.infra.model.MessageData;
 import com.whu.treehole.infra.model.PostCommentData;
 import com.whu.treehole.infra.model.PostData;
+import com.whu.treehole.infra.model.AuditLogData;
 import java.time.LocalDateTime;
 import org.apache.ibatis.annotations.Param;
 
@@ -36,11 +37,27 @@ public interface PortalCommandMapper {
 
     void updatePostSaveCount(@Param("postId") Long postId, @Param("delta") int delta);
 
+    void softDeletePost(@Param("postId") Long postId,
+                        @Param("deletedBy") Long deletedBy,
+                        @Param("deletedAt") LocalDateTime deletedAt);
+
     void insertPostComment(PostCommentData postCommentData);
 
     PostCommentData selectCommentById(@Param("commentId") Long commentId);
 
     void increasePostCommentCount(@Param("postId") Long postId);
+
+    void decreasePostCommentCount(@Param("postId") Long postId, @Param("delta") int delta);
+
+    Integer countActiveCommentBranch(@Param("rootCommentId") Long rootCommentId);
+
+    void softDeleteComment(@Param("commentId") Long commentId,
+                           @Param("deletedBy") Long deletedBy,
+                           @Param("deletedAt") LocalDateTime deletedAt);
+
+    void softDeleteCommentBranch(@Param("rootCommentId") Long rootCommentId,
+                                 @Param("deletedBy") Long deletedBy,
+                                 @Param("deletedAt") LocalDateTime deletedAt);
 
     FollowStateData selectFollowState(@Param("userId") Long userId,
                                       @Param("contactCode") String contactCode);
@@ -67,4 +84,6 @@ public interface PortalCommandMapper {
 
     void markConversationRead(@Param("userId") Long userId,
                               @Param("conversationCode") String conversationCode);
+
+    void insertAuditLog(AuditLogData auditLogData);
 }

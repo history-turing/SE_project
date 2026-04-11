@@ -180,8 +180,15 @@ INSERT IGNORE INTO roles (code, name, description, system_flag) VALUES
 
 INSERT IGNORE INTO permissions (code, name, description, module) VALUES
 ('post.create', 'Create Post', 'Create post content', 'POST'),
+('post.delete.own', 'Delete Own Post', 'Delete own post', 'POST'),
+('post.delete.any', 'Delete Any Post', 'Delete any post', 'POST'),
+('post.restore.any', 'Restore Any Post', 'Restore deleted post', 'POST'),
 ('comment.create', 'Create Comment', 'Create post comment', 'COMMENT'),
 ('comment.reply', 'Reply Comment', 'Reply to comment', 'COMMENT'),
+('comment.delete.own', 'Delete Own Comment', 'Delete own comment', 'COMMENT'),
+('comment.delete.target', 'Delete Target Comment', 'Delete comment on own content', 'COMMENT'),
+('comment.delete.any', 'Delete Any Comment', 'Delete any comment', 'COMMENT'),
+('comment.restore.any', 'Restore Any Comment', 'Restore deleted comment', 'COMMENT'),
 ('report.create', 'Create Report', 'Create report for content', 'REPORT');
 
 INSERT IGNORE INTO role_permissions (role_id, permission_id, created_by)
@@ -189,8 +196,11 @@ SELECT r.id, p.id, NULL
 FROM roles r
          INNER JOIN permissions p ON p.code IN (
     'post.create',
+    'post.delete.own',
     'comment.create',
     'comment.reply',
+    'comment.delete.own',
+    'comment.delete.target',
     'report.create'
 )
 WHERE r.code = 'USER';
@@ -200,8 +210,15 @@ SELECT r.id, p.id, NULL
 FROM roles r
          INNER JOIN permissions p ON p.code IN (
     'post.create',
+    'post.delete.own',
+    'post.delete.any',
+    'post.restore.any',
     'comment.create',
     'comment.reply',
+    'comment.delete.own',
+    'comment.delete.target',
+    'comment.delete.any',
+    'comment.restore.any',
     'report.create'
 )
 WHERE r.code = 'ADMIN';
@@ -211,8 +228,15 @@ SELECT r.id, p.id, NULL
 FROM roles r
          INNER JOIN permissions p ON p.code IN (
     'post.create',
+    'post.delete.own',
+    'post.delete.any',
+    'post.restore.any',
     'comment.create',
     'comment.reply',
+    'comment.delete.own',
+    'comment.delete.target',
+    'comment.delete.any',
+    'comment.restore.any',
     'report.create'
 )
 WHERE r.code = 'SUPER_ADMIN';

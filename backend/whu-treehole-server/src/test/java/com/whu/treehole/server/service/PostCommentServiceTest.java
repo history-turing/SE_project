@@ -43,6 +43,12 @@ class PostCommentServiceTest {
     @Mock
     private PortalCommandMapper portalCommandMapper;
 
+    @Mock
+    private AuthorizationService authorizationService;
+
+    @Mock
+    private AuditLogService auditLogService;
+
     @Captor
     private ArgumentCaptor<PostCommentData> commentCaptor;
 
@@ -52,6 +58,8 @@ class PostCommentServiceTest {
                 portalQueryMapper,
                 portalCommandMapper,
                 new PostTimeFormatter(),
+                authorizationService,
+                auditLogService,
                 FIXED_CLOCK);
 
         PostData post = new PostData();
@@ -104,6 +112,8 @@ class PostCommentServiceTest {
                 portalQueryMapper,
                 portalCommandMapper,
                 new PostTimeFormatter(),
+                authorizationService,
+                auditLogService,
                 FIXED_CLOCK);
 
         PostData post = new PostData();
@@ -176,6 +186,8 @@ class PostCommentServiceTest {
                 portalQueryMapper,
                 portalCommandMapper,
                 new PostTimeFormatter(),
+                authorizationService,
+                auditLogService,
                 FIXED_CLOCK);
 
         PostData post = new PostData();
@@ -197,5 +209,40 @@ class PostCommentServiceTest {
                 () -> service.replyComment(1L, "home-1", "comment-reply", new CommentCreateRequest("不允许三级回复")));
 
         assertEquals(4005, exception.getCode());
+    }
+
+    @Test
+    void shouldAllowReplyTargetToDeleteReply() {
+        PostCommentService service = new PostCommentService(
+                portalQueryMapper,
+                portalCommandMapper,
+                new PostTimeFormatter(),
+                authorizationService,
+                auditLogService,
+                FIXED_CLOCK);
+
+        PostData post = new PostData();
+        post.setId(8L);
+        post.setPostCode("home-1");
+        post.setCreatorUserId(1L);
+
+        PostCommentData reply = new PostCommentData();
+        reply.setId(22L);
+        reply.setCommentCode("reply-1");
+        reply.setPostId(8L);
+        reply.setUserId(2L);
+        reply.setParentCommentId(20L);
+        reply.setRootCommentId(20L);
+        reply.setReplyToUserId(3L);
+
+        when(portalCommandMapper.selectPostByCode("home-1", 3L)).thenReturn(post);
+        when(portalQueryMapper.selectCommentByCode("home-1", "reply-1")).thenReturn(reply);
+
+        service.deleteComment(3L, "home-1", "reply-1");
+
+        verify(authorizationService).assertCanWrite(3L, "comment.delete.target");
+        verify(portalCommandMapper).softDeleteComment(22L, 3L, LocalDateTime.of(2026, 4, 11, 9, 30));
+        verify(portalCommandMapper).decreasePostCommentCount(8L, 1);
+        verify(auditLogService).record("DELETE_COMMENT", 3L, "COMMENT", 22L, "reply-1");
     }
 }

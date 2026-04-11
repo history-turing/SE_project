@@ -12,6 +12,7 @@ import com.whu.treehole.domain.dto.ToggleResponse;
 import com.whu.treehole.server.service.PostCommentService;
 import com.whu.treehole.server.service.PostCommandService;
 import com.whu.treehole.server.support.AuthContextHolder;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -47,6 +48,12 @@ public class PostController {
         return ApiResponse.success(postCommandService.toggleSave(AuthContextHolder.currentUserId(), postCode));
     }
 
+    @DeleteMapping("/{postCode}")
+    public ApiResponse<Void> deletePost(@PathVariable String postCode) {
+        postCommandService.deletePost(AuthContextHolder.currentUserId(), postCode);
+        return ApiResponse.success(null);
+    }
+
     @GetMapping("/{postCode}/comments")
     public ApiResponse<PostCommentsDto> listComments(@PathVariable String postCode) {
         return ApiResponse.success(postCommentService.listComments(AuthContextHolder.currentUserId(), postCode));
@@ -65,5 +72,11 @@ public class PostController {
                                                     @Valid @RequestBody CommentCreateRequest request) {
         return ApiResponse.success(postCommentService.replyComment(
                 AuthContextHolder.currentUserId(), postCode, commentCode, request));
+    }
+
+    @DeleteMapping("/{postCode}/comments/{commentCode}")
+    public ApiResponse<Void> deleteComment(@PathVariable String postCode, @PathVariable String commentCode) {
+        postCommentService.deleteComment(AuthContextHolder.currentUserId(), postCode, commentCode);
+        return ApiResponse.success(null);
     }
 }

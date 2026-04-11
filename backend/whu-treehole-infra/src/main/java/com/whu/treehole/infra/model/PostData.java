@@ -25,6 +25,9 @@ public class PostData {
     private String imageUrl;
     private Boolean anonymousFlag;
     private String location;
+    private Boolean deletedFlag;
+    private LocalDateTime deletedAt;
+    private Long deletedBy;
     private LocalDateTime createdAt;
     private Boolean liked;
     private Boolean saved;

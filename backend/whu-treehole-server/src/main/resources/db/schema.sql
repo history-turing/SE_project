@@ -121,6 +121,106 @@ CREATE TABLE IF NOT EXISTS post_comments (
     CONSTRAINT fk_post_comments_root FOREIGN KEY (root_comment_id) REFERENCES post_comments (id)
 );
 
+SET @treehole_add_posts_deleted_flag = (
+    SELECT IF(
+                   EXISTS(
+                           SELECT 1
+                           FROM information_schema.columns
+                           WHERE table_schema = DATABASE()
+                             AND table_name = 'posts'
+                             AND column_name = 'deleted_flag'
+                   ),
+                   'SELECT 1',
+                   'ALTER TABLE posts ADD COLUMN deleted_flag TINYINT(1) NOT NULL DEFAULT 0'
+           )
+);
+PREPARE stmt_add_posts_deleted_flag FROM @treehole_add_posts_deleted_flag;
+EXECUTE stmt_add_posts_deleted_flag;
+DEALLOCATE PREPARE stmt_add_posts_deleted_flag;
+
+SET @treehole_add_posts_deleted_at = (
+    SELECT IF(
+                   EXISTS(
+                           SELECT 1
+                           FROM information_schema.columns
+                           WHERE table_schema = DATABASE()
+                             AND table_name = 'posts'
+                             AND column_name = 'deleted_at'
+                   ),
+                   'SELECT 1',
+                   'ALTER TABLE posts ADD COLUMN deleted_at DATETIME NULL'
+           )
+);
+PREPARE stmt_add_posts_deleted_at FROM @treehole_add_posts_deleted_at;
+EXECUTE stmt_add_posts_deleted_at;
+DEALLOCATE PREPARE stmt_add_posts_deleted_at;
+
+SET @treehole_add_posts_deleted_by = (
+    SELECT IF(
+                   EXISTS(
+                           SELECT 1
+                           FROM information_schema.columns
+                           WHERE table_schema = DATABASE()
+                             AND table_name = 'posts'
+                             AND column_name = 'deleted_by'
+                   ),
+                   'SELECT 1',
+                   'ALTER TABLE posts ADD COLUMN deleted_by BIGINT NULL'
+           )
+);
+PREPARE stmt_add_posts_deleted_by FROM @treehole_add_posts_deleted_by;
+EXECUTE stmt_add_posts_deleted_by;
+DEALLOCATE PREPARE stmt_add_posts_deleted_by;
+
+SET @treehole_add_post_comments_deleted_at = (
+    SELECT IF(
+                   EXISTS(
+                           SELECT 1
+                           FROM information_schema.columns
+                           WHERE table_schema = DATABASE()
+                             AND table_name = 'post_comments'
+                             AND column_name = 'deleted_at'
+                   ),
+                   'SELECT 1',
+                   'ALTER TABLE post_comments ADD COLUMN deleted_at DATETIME NULL'
+           )
+);
+PREPARE stmt_add_post_comments_deleted_at FROM @treehole_add_post_comments_deleted_at;
+EXECUTE stmt_add_post_comments_deleted_at;
+DEALLOCATE PREPARE stmt_add_post_comments_deleted_at;
+
+SET @treehole_add_post_comments_deleted_by = (
+    SELECT IF(
+                   EXISTS(
+                           SELECT 1
+                           FROM information_schema.columns
+                           WHERE table_schema = DATABASE()
+                             AND table_name = 'post_comments'
+                             AND column_name = 'deleted_by'
+                   ),
+                   'SELECT 1',
+                   'ALTER TABLE post_comments ADD COLUMN deleted_by BIGINT NULL'
+           )
+);
+PREPARE stmt_add_post_comments_deleted_by FROM @treehole_add_post_comments_deleted_by;
+EXECUTE stmt_add_post_comments_deleted_by;
+DEALLOCATE PREPARE stmt_add_post_comments_deleted_by;
+
+CREATE TABLE IF NOT EXISTS audit_logs (
+    id BIGINT PRIMARY KEY AUTO_INCREMENT,
+    actor_user_id BIGINT NOT NULL,
+    actor_role_snapshot VARCHAR(255) NOT NULL,
+    action_type VARCHAR(64) NOT NULL,
+    target_type VARCHAR(32) NOT NULL,
+    target_id BIGINT NULL,
+    target_code VARCHAR(64) NULL,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    KEY idx_audit_logs_actor_user_id (actor_user_id),
+    KEY idx_audit_logs_action_type (action_type),
+    KEY idx_audit_logs_created_at (created_at),
+    CONSTRAINT fk_audit_logs_actor_user FOREIGN KEY (actor_user_id) REFERENCES users (id)
+);
+
 CREATE TABLE IF NOT EXISTS alumni_stories (
     id BIGINT PRIMARY KEY AUTO_INCREMENT,
     story_code VARCHAR(64) NOT NULL UNIQUE,

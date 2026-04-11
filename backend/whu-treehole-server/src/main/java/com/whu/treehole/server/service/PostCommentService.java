@@ -29,15 +29,21 @@ public class PostCommentService {
     private final PortalQueryMapper portalQueryMapper;
     private final PortalCommandMapper portalCommandMapper;
     private final PostTimeFormatter postTimeFormatter;
+    private final AuthorizationService authorizationService;
+    private final AuditLogService auditLogService;
     private final Clock clock;
 
     public PostCommentService(PortalQueryMapper portalQueryMapper,
                               PortalCommandMapper portalCommandMapper,
                               PostTimeFormatter postTimeFormatter,
+                              AuthorizationService authorizationService,
+                              AuditLogService auditLogService,
                               Clock clock) {
         this.portalQueryMapper = portalQueryMapper;
         this.portalCommandMapper = portalCommandMapper;
         this.postTimeFormatter = postTimeFormatter;
+        this.authorizationService = authorizationService;
+        this.auditLogService = auditLogService;
         this.clock = clock;
     }
 
@@ -89,6 +95,7 @@ public class PostCommentService {
             @CacheEvict(cacheNames = "profilePage", allEntries = true)
     })
     public PostCommentDto createComment(long userId, String postCode, CommentCreateRequest request) {
+        authorizationService.assertCanWrite(userId, "comment.create");
         PostData post = requirePost(postCode, userId);
         return persistComment(userId, post, null, request);
     }
@@ -101,12 +108,38 @@ public class PostCommentService {
             @CacheEvict(cacheNames = "profilePage", allEntries = true)
     })
     public PostCommentDto replyComment(long userId, String postCode, String commentCode, CommentCreateRequest request) {
+        authorizationService.assertCanWrite(userId, "comment.reply");
         PostData post = requirePost(postCode, userId);
         PostCommentData parent = requireComment(postCode, commentCode);
         if (parent.getParentCommentId() != null) {
             throw new BusinessException(4005, "当前仅支持两级评论");
         }
         return persistComment(userId, post, parent, request);
+    }
+
+    @Transactional
+    @Caching(evict = {
+            @CacheEvict(cacheNames = "postComments", key = "#postCode"),
+            @CacheEvict(cacheNames = "homePage", allEntries = true),
+            @CacheEvict(cacheNames = "alumniPage", allEntries = true),
+            @CacheEvict(cacheNames = "profilePage", allEntries = true)
+    })
+    public void deleteComment(long userId, String postCode, String commentCode) {
+        PostData post = requirePost(postCode, userId);
+        PostCommentData comment = requireComment(postCode, commentCode);
+
+        authorizationService.assertCanWrite(userId, resolveDeletePermission(userId, post, comment));
+        LocalDateTime deletedAt = LocalDateTime.now(clock);
+        int deletedCount = 1;
+        if (comment.getParentCommentId() == null) {
+            Integer count = portalCommandMapper.countActiveCommentBranch(comment.getId());
+            deletedCount = count == null || count <= 0 ? 1 : count;
+            portalCommandMapper.softDeleteCommentBranch(comment.getId(), userId, deletedAt);
+        } else {
+            portalCommandMapper.softDeleteComment(comment.getId(), userId, deletedAt);
+        }
+        portalCommandMapper.decreasePostCommentCount(post.getId(), deletedCount);
+        auditLogService.record("DELETE_COMMENT", userId, "COMMENT", comment.getId(), comment.getCommentCode());
     }
 
     private PostCommentDto persistComment(long userId,
@@ -195,5 +228,15 @@ public class PostCommentService {
                 source.replyToUserName(),
                 replies
         );
+    }
+
+    private String resolveDeletePermission(long userId, PostData post, PostCommentData comment) {
+        if (Objects.equals(comment.getUserId(), userId)) {
+            return "comment.delete.own";
+        }
+        if (Objects.equals(post.getCreatorUserId(), userId) || Objects.equals(comment.getReplyToUserId(), userId)) {
+            return "comment.delete.target";
+        }
+        return "comment.delete.any";
     }
 }

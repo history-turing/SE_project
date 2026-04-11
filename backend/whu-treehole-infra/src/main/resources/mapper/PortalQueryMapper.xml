@@ -86,6 +86,7 @@
                  LEFT JOIN post_interactions i ON i.post_id = p.id AND i.user_id = #{userId}
         <where>
             p.audience_type = #{audience}
+            AND p.deleted_flag = 0
             <if test="topic != null">
                 AND p.topic_name = #{topic}
             </if>
@@ -137,6 +138,7 @@
         FROM posts p
                  LEFT JOIN post_interactions i ON i.post_id = p.id AND i.user_id = #{userId}
         WHERE p.creator_user_id = #{userId}
+          AND p.deleted_flag = 0
         ORDER BY p.created_at DESC, p.id DESC
     </select>
 
@@ -147,6 +149,7 @@
                  INNER JOIN post_interactions i ON i.post_id = p.id
         WHERE i.user_id = #{userId}
           AND i.saved = 1
+          AND p.deleted_flag = 0
         ORDER BY p.created_at DESC, p.id DESC
     </select>
 
@@ -185,6 +188,8 @@
         c.author_handle,
         c.content,
         c.deleted_flag,
+        c.deleted_at,
+        c.deleted_by,
         c.created_at,
         c.updated_at
     </sql>
@@ -229,10 +234,13 @@
         <include refid="PostProjection"/>
         FROM posts p
                  LEFT JOIN post_interactions i ON i.post_id = p.id AND i.user_id = #{userId}
-        WHERE p.title LIKE CONCAT('%', #{keyword}, '%')
-           OR p.content LIKE CONCAT('%', #{keyword}, '%')
-           OR p.author_name LIKE CONCAT('%', #{keyword}, '%')
-           OR p.topic_name LIKE CONCAT('%', #{keyword}, '%')
+        WHERE p.deleted_flag = 0
+          AND (
+              p.title LIKE CONCAT('%', #{keyword}, '%')
+                  OR p.content LIKE CONCAT('%', #{keyword}, '%')
+                  OR p.author_name LIKE CONCAT('%', #{keyword}, '%')
+                  OR p.topic_name LIKE CONCAT('%', #{keyword}, '%')
+              )
         ORDER BY p.created_at DESC, p.id DESC
     </select>
 
@@ -332,12 +340,14 @@
         SELECT COUNT(1)
         FROM posts
         WHERE audience_type = #{audience}
+          AND deleted_flag = 0
     </select>
 
     <select id="countTodayPostsByAudience" resultType="java.lang.Integer">
         SELECT COUNT(1)
         FROM posts
         WHERE audience_type = #{audience}
+          AND deleted_flag = 0
           AND created_at >= CURRENT_DATE()
           AND created_at &lt; DATE_ADD(CURRENT_DATE(), INTERVAL 1 DAY)
     </select>

@@ -16,6 +16,8 @@ public class PostCommentData {
     private String authorHandle;
     private String content;
     private Boolean deletedFlag;
+    private LocalDateTime deletedAt;
+    private Long deletedBy;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 }

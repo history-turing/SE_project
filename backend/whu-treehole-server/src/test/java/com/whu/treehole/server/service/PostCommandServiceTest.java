@@ -39,6 +39,12 @@ class PostCommandServiceTest {
     @Mock
     private PortalQueryMapper portalQueryMapper;
 
+    @Mock
+    private AuthorizationService authorizationService;
+
+    @Mock
+    private AuditLogService auditLogService;
+
     @Captor
     private ArgumentCaptor<PostData> postDataCaptor;
 
@@ -50,6 +56,8 @@ class PostCommandServiceTest {
                 portalCommandMapper,
                 portalQueryMapper,
                 new PostTimeFormatter(),
+                authorizationService,
+                auditLogService,
                 FIXED_CLOCK);
     }
 
@@ -84,5 +92,21 @@ class PostCommandServiceTest {
         verify(portalCommandMapper).insertPost(postDataCaptor.capture());
         assertEquals("2026-04-11 09:05", postDataCaptor.getValue().getDisplayTime());
         assertEquals("2026-04-11 09:05", created.createdAt());
+    }
+
+    @Test
+    void shouldAllowAuthorToSoftDeleteOwnPost() {
+        PostData post = new PostData();
+        post.setId(8L);
+        post.setPostCode("home-1");
+        post.setCreatorUserId(1L);
+
+        when(portalCommandMapper.selectPostByCode("home-1", 1L)).thenReturn(post);
+
+        postCommandService.deletePost(1L, "home-1");
+
+        verify(authorizationService).assertCanWrite(1L, "post.delete.own");
+        verify(portalCommandMapper).softDeletePost(8L, 1L, LocalDateTime.of(2026, 4, 11, 9, 5));
+        verify(auditLogService).record("DELETE_POST", 1L, "POST", 8L, "home-1");
     }
 }

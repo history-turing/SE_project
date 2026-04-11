@@ -26,15 +26,21 @@ public class PostCommandService {
     private final PortalCommandMapper portalCommandMapper;
     private final PortalQueryMapper portalQueryMapper;
     private final PostTimeFormatter postTimeFormatter;
+    private final AuthorizationService authorizationService;
+    private final AuditLogService auditLogService;
     private final Clock clock;
 
     public PostCommandService(PortalCommandMapper portalCommandMapper,
                               PortalQueryMapper portalQueryMapper,
                               PostTimeFormatter postTimeFormatter,
+                              AuthorizationService authorizationService,
+                              AuditLogService auditLogService,
                               Clock clock) {
         this.portalCommandMapper = portalCommandMapper;
         this.portalQueryMapper = portalQueryMapper;
         this.postTimeFormatter = postTimeFormatter;
+        this.authorizationService = authorizationService;
+        this.auditLogService = auditLogService;
         this.clock = clock;
     }
 
@@ -45,6 +51,7 @@ public class PostCommandService {
             @CacheEvict(cacheNames = "profilePage", allEntries = true)
     })
     public PostCardDto createPost(long userId, PostCreateRequest request) {
+        authorizationService.assertCanWrite(userId, "post.create");
         if (portalCommandMapper.countTopicByName(request.topic()) == 0) {
             throw new BusinessException(4004, "发布话题不存在");
         }
@@ -86,6 +93,7 @@ public class PostCommandService {
             @CacheEvict(cacheNames = "profilePage", allEntries = true)
     })
     public ToggleResponse toggleLike(long userId, String postCode) {
+        authorizationService.assertActiveUser(userId);
         InteractionStateData state = portalCommandMapper.selectInteractionState(userId, postCode);
         PostData postData = requirePost(postCode, userId);
 
@@ -108,6 +116,7 @@ public class PostCommandService {
             @CacheEvict(cacheNames = "profilePage", allEntries = true)
     })
     public ToggleResponse toggleSave(long userId, String postCode) {
+        authorizationService.assertActiveUser(userId);
         InteractionStateData state = portalCommandMapper.selectInteractionState(userId, postCode);
         PostData postData = requirePost(postCode, userId);
 
@@ -121,6 +130,21 @@ public class PostCommandService {
         portalCommandMapper.updatePostSaveCount(postData.getId(), nextSaved ? 1 : -1);
         PostData latest = requirePost(postCode, userId);
         return new ToggleResponse(postCode, nextSaved, latest.getSaveCount());
+    }
+
+    @Transactional
+    @Caching(evict = {
+            @CacheEvict(cacheNames = "homePage", allEntries = true),
+            @CacheEvict(cacheNames = "alumniPage", allEntries = true),
+            @CacheEvict(cacheNames = "profilePage", allEntries = true)
+    })
+    public void deletePost(long userId, String postCode) {
+        PostData post = requirePost(postCode, userId);
+        String permissionCode = userId == post.getCreatorUserId() ? "post.delete.own" : "post.delete.any";
+        authorizationService.assertCanWrite(userId, permissionCode);
+
+        portalCommandMapper.softDeletePost(post.getId(), userId, LocalDateTime.now(clock));
+        auditLogService.record("DELETE_POST", userId, "POST", post.getId(), post.getPostCode());
     }
 
     private PostData requirePost(String postCode, long userId) {
