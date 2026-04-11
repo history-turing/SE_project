@@ -78,11 +78,6 @@ export function AppShell() {
             <button className="ghost-button" type="button" aria-label="通知">
               <Icon name="bell" className="icon" />
             </button>
-            {canAccessAdmin ? (
-              <NavLink className="secondary-button secondary-button--compact" to="/admin">
-                管理台
-              </NavLink>
-            ) : null}
             <button className="primary-button" type="button" onClick={() => setOpenComposer(true)}>
               <Icon name="plus" className="icon" />
               发布

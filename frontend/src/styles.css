@@ -93,9 +93,13 @@ button {
 .topbar__inner {
   min-height: 84px;
   display: grid;
-  grid-template-columns: 1fr auto auto;
-  gap: 20px;
+  grid-template-columns: minmax(240px, 1fr) auto auto;
+  gap: 16px;
   align-items: center;
+}
+
+.brand-block {
+  min-width: 240px;
 }
 
 .brand {
@@ -140,10 +144,13 @@ button {
   display: flex;
   align-items: center;
   gap: 12px;
+  justify-self: end;
+  flex-wrap: nowrap;
 }
 
 .search-bar {
-  min-width: 250px;
+  width: clamp(190px, 18vw, 250px);
+  min-width: 190px;
   display: inline-flex;
   align-items: center;
   gap: 10px;
