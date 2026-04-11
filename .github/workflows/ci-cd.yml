@@ -72,9 +72,24 @@ jobs:
           set -e
           cd /root/SE_project
           git pull --ff-only origin main
-          if docker compose version >/dev/null 2>&1; then
-            docker compose up -d --build
-          else
-            docker-compose up -d --build
-          fi
+          compose_cmd() {
+            if docker compose version >/dev/null 2>&1; then
+              docker compose "$@"
+            else
+              docker-compose "$@"
+            fi
+          }
+
+          compose_cmd up -d --build
+
+          for attempt in $(seq 1 24); do
+            if curl -fsS http://127.0.0.1/actuator/health | grep -q '"status":"UP"'; then
+              exit 0
+            fi
+            sleep 5
+          done
+
+          compose_cmd ps
+          compose_cmd logs backend --tail=200
+          exit 1
           EOF
