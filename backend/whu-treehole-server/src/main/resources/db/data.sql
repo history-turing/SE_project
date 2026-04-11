@@ -88,6 +88,116 @@ INSERT IGNORE INTO alumni_contacts (id, contact_code, name, meta, focus, avatar_
 INSERT IGNORE INTO user_follow_contacts (id, user_id, contact_id, followed, updated_at) VALUES
 (1, 1, 1, 1, '2026-04-08 12:00:00');
 
+-- RBAC seed data
+INSERT IGNORE INTO roles (code, name, description, system_flag) VALUES
+('SUPER_ADMIN', 'Super Admin', 'System super administrator', 1),
+('ADMIN', 'Admin', 'Moderator administrator', 1),
+('USER', 'User', 'Normal authenticated user', 1);
+
+INSERT IGNORE INTO permissions (code, name, description, module) VALUES
+('post.create', 'Create Post', 'Create post content', 'POST'),
+('post.delete.own', 'Delete Own Post', 'Delete own post', 'POST'),
+('post.delete.any', 'Delete Any Post', 'Delete any post', 'POST'),
+('post.restore.any', 'Restore Any Post', 'Restore deleted post', 'POST'),
+('comment.create', 'Create Comment', 'Create post comment', 'COMMENT'),
+('comment.reply', 'Reply Comment', 'Reply to comment', 'COMMENT'),
+('comment.delete.own', 'Delete Own Comment', 'Delete own comment', 'COMMENT'),
+('comment.delete.target', 'Delete Target Comment', 'Delete comment in own post', 'COMMENT'),
+('comment.delete.any', 'Delete Any Comment', 'Delete any comment', 'COMMENT'),
+('comment.restore.any', 'Restore Any Comment', 'Restore deleted comment', 'COMMENT'),
+('report.create', 'Create Report', 'Create report for content', 'REPORT'),
+('report.read.any', 'Read Reports', 'Read all reports', 'REPORT'),
+('report.assign', 'Assign Report', 'Assign report to moderator', 'REPORT'),
+('report.resolve', 'Resolve Report', 'Resolve report result', 'REPORT'),
+('audit.read.moderation', 'Read Moderation Audit', 'Read moderation audit logs', 'AUDIT'),
+('audit.read.all', 'Read All Audit', 'Read all audit logs', 'AUDIT'),
+('user.ban', 'Ban User', 'Ban target user', 'USER'),
+('user.unban', 'Unban User', 'Unban target user', 'USER'),
+('role.read.any', 'Read Roles', 'Read role data', 'ROLE'),
+('role.assign.admin', 'Assign Admin Role', 'Assign admin role', 'ROLE'),
+('role.revoke.admin', 'Revoke Admin Role', 'Revoke admin role', 'ROLE');
+
+INSERT IGNORE INTO role_permissions (role_id, permission_id, created_by)
+SELECT r.id, p.id, NULL
+FROM roles r
+         INNER JOIN permissions p ON p.code IN (
+    'post.create',
+    'post.delete.own',
+    'comment.create',
+    'comment.reply',
+    'comment.delete.own',
+    'comment.delete.target',
+    'report.create'
+)
+WHERE r.code = 'USER';
+
+INSERT IGNORE INTO role_permissions (role_id, permission_id, created_by)
+SELECT r.id, p.id, NULL
+FROM roles r
+         INNER JOIN permissions p ON p.code IN (
+    'post.create',
+    'post.delete.own',
+    'comment.create',
+    'comment.reply',
+    'comment.delete.own',
+    'comment.delete.target',
+    'report.create',
+    'post.delete.any',
+    'post.restore.any',
+    'comment.delete.any',
+    'comment.restore.any',
+    'report.read.any',
+    'report.assign',
+    'report.resolve',
+    'audit.read.moderation',
+    'user.ban',
+    'user.unban'
+)
+WHERE r.code = 'ADMIN';
+
+INSERT IGNORE INTO role_permissions (role_id, permission_id, created_by)
+SELECT r.id, p.id, NULL
+FROM roles r
+         INNER JOIN permissions p ON p.code IN (
+    'post.create',
+    'post.delete.own',
+    'comment.create',
+    'comment.reply',
+    'comment.delete.own',
+    'comment.delete.target',
+    'report.create',
+    'post.delete.any',
+    'post.restore.any',
+    'comment.delete.any',
+    'comment.restore.any',
+    'report.read.any',
+    'report.assign',
+    'report.resolve',
+    'audit.read.moderation',
+    'user.ban',
+    'user.unban',
+    'role.read.any',
+    'role.assign.admin',
+    'role.revoke.admin',
+    'audit.read.all'
+)
+WHERE r.code = 'SUPER_ADMIN';
+
+INSERT IGNORE INTO user_roles (user_id, role_id, created_by)
+SELECT u.id, r.id, NULL
+FROM users u
+         INNER JOIN roles r ON r.code = 'USER';
+
+INSERT IGNORE INTO user_roles (user_id, role_id, created_by)
+SELECT uc.user_id, r.id, uc.user_id
+FROM user_credentials uc
+         INNER JOIN roles r ON r.code = 'SUPER_ADMIN'
+WHERE uc.username = 'xiewei';
+
+UPDATE users
+SET account_status = 'ACTIVE'
+WHERE account_status IS NULL OR account_status = '';
+
 INSERT IGNORE INTO conversations (id, conversation_code, owner_user_id, peer_name, peer_subtitle, peer_avatar_url, last_message, display_time, unread_count, sort_time) VALUES
 (1, 'fox', 1, '珞珈山下的小狐狸', '学业互助伙伴', 'https://example.com/conversations/fox.jpg', '谢谢你的学业互助，真的很有用！', '14:20', 1, '2026-04-08 14:20:00'),
 (2, 'museum', 1, '信管男神（自封）', '周末逛展搭子', 'https://example.com/conversations/museum.jpg', '下次一起去万林博物馆看展吗？', '昨天', 0, '2026-04-07 20:00:00'),

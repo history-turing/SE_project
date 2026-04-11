@@ -7,10 +7,15 @@ import com.whu.treehole.domain.dto.AuthResponse;
 import com.whu.treehole.domain.dto.AuthUserDto;
 import com.whu.treehole.domain.dto.EmailCodeRequest;
 import com.whu.treehole.domain.dto.LoginRequest;
+import com.whu.treehole.domain.dto.PermissionDto;
 import com.whu.treehole.domain.dto.RegisterRequest;
+import com.whu.treehole.domain.dto.RoleDto;
+import com.whu.treehole.domain.enums.AccountStatus;
 import com.whu.treehole.infra.mapper.AuthMapper;
 import com.whu.treehole.infra.mapper.PortalQueryMapper;
 import com.whu.treehole.infra.model.AuthCredentialData;
+import com.whu.treehole.infra.model.PermissionData;
+import com.whu.treehole.infra.model.RoleData;
 import com.whu.treehole.infra.model.UserCreateData;
 import com.whu.treehole.infra.model.UserProfileData;
 import com.whu.treehole.server.config.AuthProperties;
@@ -19,6 +24,8 @@ import java.nio.charset.StandardCharsets;
 import java.security.SecureRandom;
 import java.time.LocalDateTime;
 import java.util.HexFormat;
+import java.util.List;
+import java.util.Locale;
 import java.util.UUID;
 import org.springframework.boot.autoconfigure.mail.MailProperties;
 import org.slf4j.Logger;
@@ -170,12 +177,23 @@ public class AuthService {
             throw new BusinessException(4040, "未找到当前用户资料");
         }
 
+        List<RoleDto> roles = authMapper.selectRolesByUserId(userId).stream()
+                .map(this::toRoleDto)
+                .toList();
+        List<PermissionDto> permissions = authMapper.selectPermissionsByUserId(userId).stream()
+                .map(this::toPermissionDto)
+                .toList();
+        AccountStatus accountStatus = parseAccountStatus(authMapper.selectAccountStatusByUserId(userId));
+
         return new AuthUserDto(
                 profile.getId(),
                 credential.getUsername(),
                 credential.getEmail(),
                 profile.getName(),
-                profile.getAvatarUrl()
+                profile.getAvatarUrl(),
+                roles,
+                permissions,
+                accountStatus
         );
     }
 
@@ -259,5 +277,25 @@ public class AuthService {
                 + "<text x='50%' y='54%' text-anchor='middle' font-size='52' font-family='Arial' fill='white'>"
                 + initials + "</text></svg>";
         return "data:image/svg+xml," + URLEncoder.encode(svg, StandardCharsets.UTF_8);
+    }
+
+    private RoleDto toRoleDto(RoleData roleData) {
+        return new RoleDto(roleData.getId(), roleData.getCode(), roleData.getName());
+    }
+
+    private PermissionDto toPermissionDto(PermissionData permissionData) {
+        return new PermissionDto(permissionData.getId(), permissionData.getCode(), permissionData.getName());
+    }
+
+    private AccountStatus parseAccountStatus(String statusCode) {
+        if (statusCode == null || statusCode.isBlank()) {
+            return AccountStatus.ACTIVE;
+        }
+        try {
+            return AccountStatus.valueOf(statusCode.trim().toUpperCase(Locale.ROOT));
+        } catch (IllegalArgumentException ex) {
+            log.warn("Unknown account status: {}, fallback to ACTIVE", statusCode);
+            return AccountStatus.ACTIVE;
+        }
     }
 }

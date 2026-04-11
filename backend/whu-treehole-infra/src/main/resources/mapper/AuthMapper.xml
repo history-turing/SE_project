@@ -49,6 +49,34 @@
         LIMIT 1
     </select>
 
+    <select id="selectRolesByUserId" resultType="com.whu.treehole.infra.model.RoleData">
+        SELECT DISTINCT r.id,
+                        r.code,
+                        r.name
+        FROM user_roles ur
+                 INNER JOIN roles r ON r.id = ur.role_id
+        WHERE ur.user_id = #{userId}
+        ORDER BY r.id ASC
+    </select>
+
+    <select id="selectPermissionsByUserId" resultType="com.whu.treehole.infra.model.PermissionData">
+        SELECT DISTINCT p.id,
+                        p.code,
+                        p.name
+        FROM user_roles ur
+                 INNER JOIN role_permissions rp ON rp.role_id = ur.role_id
+                 INNER JOIN permissions p ON p.id = rp.permission_id
+        WHERE ur.user_id = #{userId}
+        ORDER BY p.id ASC
+    </select>
+
+    <select id="selectAccountStatusByUserId" resultType="java.lang.String">
+        SELECT COALESCE(account_status, 'ACTIVE')
+        FROM users
+        WHERE id = #{userId}
+        LIMIT 1
+    </select>
+
     <insert id="insertUser" parameterType="com.whu.treehole.infra.model.UserCreateData" useGeneratedKeys="true" keyProperty="id">
         INSERT INTO users (
             user_code,

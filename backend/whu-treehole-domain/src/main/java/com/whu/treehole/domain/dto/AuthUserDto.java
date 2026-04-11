@@ -1,12 +1,18 @@
 package com.whu.treehole.domain.dto;
 
-/* 当前登录用户摘要信息。 */
+/* Current authenticated user summary. */
+
+import com.whu.treehole.domain.enums.AccountStatus;
+import java.util.List;
 
 public record AuthUserDto(
         Long id,
         String username,
         String email,
         String name,
-        String avatar
+        String avatar,
+        List<RoleDto> roles,
+        List<PermissionDto> permissions,
+        AccountStatus accountStatus
 ) {
 }
