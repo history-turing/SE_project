@@ -82,6 +82,11 @@ jobs:
 
           compose_cmd up -d --build
 
+          compose_cmd exec -T mysql mysql -uroot -p"${MYSQL_ROOT_PASSWORD:-jwdyszm0220}" -D "${MYSQL_DATABASE:-se_project}" \
+            < backend/whu-treehole-server/src/main/resources/db/schema.sql
+          compose_cmd exec -T mysql mysql -uroot -p"${MYSQL_ROOT_PASSWORD:-jwdyszm0220}" -D "${MYSQL_DATABASE:-se_project}" \
+            < backend/whu-treehole-server/src/main/resources/db/data.sql
+
           for attempt in $(seq 1 24); do
             if curl -fsS http://127.0.0.1/actuator/health | grep -q '"status":"UP"'; then
               exit 0
