@@ -189,7 +189,17 @@ INSERT IGNORE INTO permissions (code, name, description, module) VALUES
 ('comment.delete.target', 'Delete Target Comment', 'Delete comment on own content', 'COMMENT'),
 ('comment.delete.any', 'Delete Any Comment', 'Delete any comment', 'COMMENT'),
 ('comment.restore.any', 'Restore Any Comment', 'Restore deleted comment', 'COMMENT'),
-('report.create', 'Create Report', 'Create report for content', 'REPORT');
+('report.create', 'Create Report', 'Create report for content', 'REPORT'),
+('report.read.any', 'Read Reports', 'Read all reports', 'REPORT'),
+('report.assign', 'Assign Report', 'Assign report to moderator', 'REPORT'),
+('report.resolve', 'Resolve Report', 'Resolve report result', 'REPORT'),
+('audit.read.moderation', 'Read Moderation Audit', 'Read moderation audit logs', 'AUDIT'),
+('audit.read.all', 'Read All Audit', 'Read all audit logs', 'AUDIT'),
+('user.ban', 'Ban User', 'Ban target user', 'USER'),
+('user.unban', 'Unban User', 'Unban target user', 'USER'),
+('role.read.any', 'Read Roles', 'Read role data', 'ROLE'),
+('role.assign.admin', 'Assign Admin Role', 'Assign admin role', 'ROLE'),
+('role.revoke.admin', 'Revoke Admin Role', 'Revoke admin role', 'ROLE');
 
 INSERT IGNORE INTO role_permissions (role_id, permission_id, created_by)
 SELECT r.id, p.id, NULL
@@ -219,7 +229,13 @@ FROM roles r
     'comment.delete.target',
     'comment.delete.any',
     'comment.restore.any',
-    'report.create'
+    'report.create',
+    'report.read.any',
+    'report.assign',
+    'report.resolve',
+    'audit.read.moderation',
+    'user.ban',
+    'user.unban'
 )
 WHERE r.code = 'ADMIN';
 
@@ -237,7 +253,17 @@ FROM roles r
     'comment.delete.target',
     'comment.delete.any',
     'comment.restore.any',
-    'report.create'
+    'report.create',
+    'report.read.any',
+    'report.assign',
+    'report.resolve',
+    'audit.read.moderation',
+    'audit.read.all',
+    'user.ban',
+    'user.unban',
+    'role.read.any',
+    'role.assign.admin',
+    'role.revoke.admin'
 )
 WHERE r.code = 'SUPER_ADMIN';
 

@@ -77,6 +77,22 @@
         LIMIT 1
     </select>
 
+    <select id="selectUserIdByUserCode" resultType="java.lang.Long">
+        SELECT id
+        FROM users
+        WHERE user_code = #{userCode}
+        LIMIT 1
+    </select>
+
+    <select id="selectRoleByCode" resultType="com.whu.treehole.infra.model.RoleData">
+        SELECT id,
+               code,
+               name
+        FROM roles
+        WHERE code = #{roleCode}
+        LIMIT 1
+    </select>
+
     <insert id="insertUser" parameterType="com.whu.treehole.infra.model.UserCreateData" useGeneratedKeys="true" keyProperty="id">
         INSERT INTO users (
             user_code,
@@ -137,5 +153,19 @@
         INSERT INTO user_profile_stats (user_id, stat_label, stat_value, sort_order)
         VALUES (#{userId}, #{statLabel}, #{statValue}, #{sortOrder})
     </insert>
+
+    <insert id="insertUserRole">
+        INSERT IGNORE INTO user_roles (user_id, role_id, created_at, created_by)
+        VALUES (#{userId}, #{roleId}, #{createdAt}, #{createdBy})
+    </insert>
+
+    <update id="updateAccountStatus">
+        UPDATE users
+        SET account_status = #{accountStatus},
+            status_reason = #{statusReason},
+            status_updated_at = #{statusUpdatedAt},
+            status_updated_by = #{statusUpdatedBy}
+        WHERE id = #{userId}
+    </update>
 
 </mapper>

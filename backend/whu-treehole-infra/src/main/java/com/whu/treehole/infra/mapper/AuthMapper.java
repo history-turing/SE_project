@@ -38,4 +38,19 @@ public interface AuthMapper {
     List<PermissionData> selectPermissionsByUserId(@Param("userId") Long userId);
 
     String selectAccountStatusByUserId(@Param("userId") Long userId);
+
+    Long selectUserIdByUserCode(@Param("userCode") String userCode);
+
+    RoleData selectRoleByCode(@Param("roleCode") String roleCode);
+
+    void insertUserRole(@Param("userId") Long userId,
+                        @Param("roleId") Long roleId,
+                        @Param("createdAt") LocalDateTime createdAt,
+                        @Param("createdBy") Long createdBy);
+
+    void updateAccountStatus(@Param("userId") Long userId,
+                             @Param("accountStatus") String accountStatus,
+                             @Param("statusReason") String statusReason,
+                             @Param("statusUpdatedAt") LocalDateTime statusUpdatedAt,
+                             @Param("statusUpdatedBy") Long statusUpdatedBy);
 }
