@@ -188,11 +188,73 @@ CREATE TABLE IF NOT EXISTS user_credentials (
     CONSTRAINT fk_user_credentials_user FOREIGN KEY (user_id) REFERENCES users (id)
 );
 
-ALTER TABLE users
-    ADD COLUMN IF NOT EXISTS account_status VARCHAR(32) NOT NULL DEFAULT 'ACTIVE',
-    ADD COLUMN IF NOT EXISTS status_reason VARCHAR(255) NULL,
-    ADD COLUMN IF NOT EXISTS status_updated_at DATETIME NULL,
-    ADD COLUMN IF NOT EXISTS status_updated_by BIGINT NULL;
+SET @treehole_add_account_status = (
+    SELECT IF(
+                   EXISTS(
+                           SELECT 1
+                           FROM information_schema.columns
+                           WHERE table_schema = DATABASE()
+                             AND table_name = 'users'
+                             AND column_name = 'account_status'
+                   ),
+                   'SELECT 1',
+                   'ALTER TABLE users ADD COLUMN account_status VARCHAR(32) NOT NULL DEFAULT ''ACTIVE'''
+           )
+);
+PREPARE stmt_add_account_status FROM @treehole_add_account_status;
+EXECUTE stmt_add_account_status;
+DEALLOCATE PREPARE stmt_add_account_status;
+
+SET @treehole_add_status_reason = (
+    SELECT IF(
+                   EXISTS(
+                           SELECT 1
+                           FROM information_schema.columns
+                           WHERE table_schema = DATABASE()
+                             AND table_name = 'users'
+                             AND column_name = 'status_reason'
+                   ),
+                   'SELECT 1',
+                   'ALTER TABLE users ADD COLUMN status_reason VARCHAR(255) NULL'
+           )
+);
+PREPARE stmt_add_status_reason FROM @treehole_add_status_reason;
+EXECUTE stmt_add_status_reason;
+DEALLOCATE PREPARE stmt_add_status_reason;
+
+SET @treehole_add_status_updated_at = (
+    SELECT IF(
+                   EXISTS(
+                           SELECT 1
+                           FROM information_schema.columns
+                           WHERE table_schema = DATABASE()
+                             AND table_name = 'users'
+                             AND column_name = 'status_updated_at'
+                   ),
+                   'SELECT 1',
+                   'ALTER TABLE users ADD COLUMN status_updated_at DATETIME NULL'
+           )
+);
+PREPARE stmt_add_status_updated_at FROM @treehole_add_status_updated_at;
+EXECUTE stmt_add_status_updated_at;
+DEALLOCATE PREPARE stmt_add_status_updated_at;
+
+SET @treehole_add_status_updated_by = (
+    SELECT IF(
+                   EXISTS(
+                           SELECT 1
+                           FROM information_schema.columns
+                           WHERE table_schema = DATABASE()
+                             AND table_name = 'users'
+                             AND column_name = 'status_updated_by'
+                   ),
+                   'SELECT 1',
+                   'ALTER TABLE users ADD COLUMN status_updated_by BIGINT NULL'
+           )
+);
+PREPARE stmt_add_status_updated_by FROM @treehole_add_status_updated_by;
+EXECUTE stmt_add_status_updated_by;
+DEALLOCATE PREPARE stmt_add_status_updated_by;
 
 CREATE TABLE IF NOT EXISTS roles (
     id BIGINT PRIMARY KEY AUTO_INCREMENT,

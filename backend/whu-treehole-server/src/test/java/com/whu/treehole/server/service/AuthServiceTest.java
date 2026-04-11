@@ -61,8 +61,8 @@ class AuthServiceTest {
 
         PermissionData permissionData = new PermissionData();
         permissionData.setId(100L);
-        permissionData.setCode("role.assign.admin");
-        permissionData.setName("Assign Admin");
+        permissionData.setCode("post.create");
+        permissionData.setName("Create Post");
 
         when(authMapper.selectCredentialByUserId(1L)).thenReturn(credentialData);
         when(portalQueryMapper.selectUserProfile(1L)).thenReturn(profileData);
@@ -77,7 +77,7 @@ class AuthServiceTest {
         assertEquals(1, currentUser.roles().size());
         assertEquals("SUPER_ADMIN", currentUser.roles().get(0).code());
         assertEquals(1, currentUser.permissions().size());
-        assertEquals("role.assign.admin", currentUser.permissions().get(0).code());
+        assertEquals("post.create", currentUser.permissions().get(0).code());
         assertEquals(AccountStatus.ACTIVE, currentUser.accountStatus());
     }
 }

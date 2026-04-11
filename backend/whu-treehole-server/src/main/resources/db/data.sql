@@ -1,6 +1,19 @@
 INSERT IGNORE INTO users (id, user_code, name, tagline, college, grade_year, bio, avatar_url, created_at) VALUES
 (1, 'me', '樱花味猫奴', '把校园生活慢慢写成一册柔软的日志。', '信息管理学院', '2022 级', '喜欢晚霞、热干面、图书馆靠窗位置，也喜欢把看似平凡的瞬间认真记下来。', 'https://example.com/avatar/me.jpg', '2026-04-08 10:00:00');
 
+INSERT INTO users (user_code, name, tagline, college, grade_year, bio, avatar_url, created_at)
+SELECT 'xiewei',
+       'xiewei',
+       '维护树洞系统，也认真记录校园生活。',
+       '信息管理学院',
+       '2022 级',
+       '系统初始化的超级管理员账号。',
+       'https://example.com/avatar/xiewei.jpg',
+       '2026-04-08 10:05:00'
+WHERE NOT EXISTS (
+    SELECT 1 FROM users WHERE user_code = 'xiewei'
+);
+
 INSERT IGNORE INTO user_badges (id, user_id, badge_name, sort_order) VALUES
 (1, 1, '树洞记录者', 1),
 (2, 1, '春招互助', 2),
@@ -10,6 +23,77 @@ INSERT IGNORE INTO user_profile_stats (id, user_id, stat_label, stat_value, sort
 (1, 1, '已发树洞', '18', 1),
 (2, 1, '收藏内容', '27', 2),
 (3, 1, '已建立私信', '9', 3);
+
+INSERT INTO user_badges (user_id, badge_name, sort_order)
+SELECT u.id, '邮箱已认证', 1
+FROM users u
+WHERE u.user_code = 'xiewei'
+  AND NOT EXISTS (
+      SELECT 1
+      FROM user_badges ub
+      WHERE ub.user_id = u.id
+        AND ub.badge_name = '邮箱已认证'
+  );
+
+INSERT INTO user_profile_stats (user_id, stat_label, stat_value, sort_order)
+SELECT u.id, '已发树洞', '0', 1
+FROM users u
+WHERE u.user_code = 'xiewei'
+  AND NOT EXISTS (
+      SELECT 1
+      FROM user_profile_stats ups
+      WHERE ups.user_id = u.id
+        AND ups.stat_label = '已发树洞'
+  );
+
+INSERT INTO user_profile_stats (user_id, stat_label, stat_value, sort_order)
+SELECT u.id, '收藏内容', '0', 2
+FROM users u
+WHERE u.user_code = 'xiewei'
+  AND NOT EXISTS (
+      SELECT 1
+      FROM user_profile_stats ups
+      WHERE ups.user_id = u.id
+        AND ups.stat_label = '收藏内容'
+  );
+
+INSERT INTO user_profile_stats (user_id, stat_label, stat_value, sort_order)
+SELECT u.id, '已建立私信', '0', 3
+FROM users u
+WHERE u.user_code = 'xiewei'
+  AND NOT EXISTS (
+      SELECT 1
+      FROM user_profile_stats ups
+      WHERE ups.user_id = u.id
+        AND ups.stat_label = '已建立私信'
+  );
+
+INSERT INTO user_credentials (
+    user_id,
+    email,
+    username,
+    password_hash,
+    email_verified_at,
+    last_login_at,
+    created_at,
+    updated_at
+)
+SELECT u.id,
+       'xiewei@whu.edu.cn',
+       'xiewei',
+       '$2a$10$Mdu24keixSODrG.puvozUOpLv0tTVtLG7F7xmSfPkvXEgkggNEq.2',
+       '2026-04-08 10:05:00',
+       '2026-04-08 10:05:00',
+       '2026-04-08 10:05:00',
+       '2026-04-08 10:05:00'
+FROM users u
+WHERE u.user_code = 'xiewei'
+  AND NOT EXISTS (
+      SELECT 1
+      FROM user_credentials uc
+      WHERE uc.username = 'xiewei'
+         OR uc.email = 'xiewei@whu.edu.cn'
+  );
 
 INSERT IGNORE INTO topics (id, topic_code, name, description, heat_text, destination_type, accent_tone, emoji, sort_order) VALUES
 (1, 'confession', '表白墙', '把没说出口的话，放进珞珈山的风里。', '1.2k 正在热议', 'CAMPUS', 'rose', '💗', 1),
@@ -96,37 +180,17 @@ INSERT IGNORE INTO roles (code, name, description, system_flag) VALUES
 
 INSERT IGNORE INTO permissions (code, name, description, module) VALUES
 ('post.create', 'Create Post', 'Create post content', 'POST'),
-('post.delete.own', 'Delete Own Post', 'Delete own post', 'POST'),
-('post.delete.any', 'Delete Any Post', 'Delete any post', 'POST'),
-('post.restore.any', 'Restore Any Post', 'Restore deleted post', 'POST'),
 ('comment.create', 'Create Comment', 'Create post comment', 'COMMENT'),
 ('comment.reply', 'Reply Comment', 'Reply to comment', 'COMMENT'),
-('comment.delete.own', 'Delete Own Comment', 'Delete own comment', 'COMMENT'),
-('comment.delete.target', 'Delete Target Comment', 'Delete comment in own post', 'COMMENT'),
-('comment.delete.any', 'Delete Any Comment', 'Delete any comment', 'COMMENT'),
-('comment.restore.any', 'Restore Any Comment', 'Restore deleted comment', 'COMMENT'),
-('report.create', 'Create Report', 'Create report for content', 'REPORT'),
-('report.read.any', 'Read Reports', 'Read all reports', 'REPORT'),
-('report.assign', 'Assign Report', 'Assign report to moderator', 'REPORT'),
-('report.resolve', 'Resolve Report', 'Resolve report result', 'REPORT'),
-('audit.read.moderation', 'Read Moderation Audit', 'Read moderation audit logs', 'AUDIT'),
-('audit.read.all', 'Read All Audit', 'Read all audit logs', 'AUDIT'),
-('user.ban', 'Ban User', 'Ban target user', 'USER'),
-('user.unban', 'Unban User', 'Unban target user', 'USER'),
-('role.read.any', 'Read Roles', 'Read role data', 'ROLE'),
-('role.assign.admin', 'Assign Admin Role', 'Assign admin role', 'ROLE'),
-('role.revoke.admin', 'Revoke Admin Role', 'Revoke admin role', 'ROLE');
+('report.create', 'Create Report', 'Create report for content', 'REPORT');
 
 INSERT IGNORE INTO role_permissions (role_id, permission_id, created_by)
 SELECT r.id, p.id, NULL
 FROM roles r
          INNER JOIN permissions p ON p.code IN (
     'post.create',
-    'post.delete.own',
     'comment.create',
     'comment.reply',
-    'comment.delete.own',
-    'comment.delete.target',
     'report.create'
 )
 WHERE r.code = 'USER';
@@ -136,22 +200,9 @@ SELECT r.id, p.id, NULL
 FROM roles r
          INNER JOIN permissions p ON p.code IN (
     'post.create',
-    'post.delete.own',
     'comment.create',
     'comment.reply',
-    'comment.delete.own',
-    'comment.delete.target',
-    'report.create',
-    'post.delete.any',
-    'post.restore.any',
-    'comment.delete.any',
-    'comment.restore.any',
-    'report.read.any',
-    'report.assign',
-    'report.resolve',
-    'audit.read.moderation',
-    'user.ban',
-    'user.unban'
+    'report.create'
 )
 WHERE r.code = 'ADMIN';
 
@@ -160,26 +211,9 @@ SELECT r.id, p.id, NULL
 FROM roles r
          INNER JOIN permissions p ON p.code IN (
     'post.create',
-    'post.delete.own',
     'comment.create',
     'comment.reply',
-    'comment.delete.own',
-    'comment.delete.target',
-    'report.create',
-    'post.delete.any',
-    'post.restore.any',
-    'comment.delete.any',
-    'comment.restore.any',
-    'report.read.any',
-    'report.assign',
-    'report.resolve',
-    'audit.read.moderation',
-    'user.ban',
-    'user.unban',
-    'role.read.any',
-    'role.assign.admin',
-    'role.revoke.admin',
-    'audit.read.all'
+    'report.create'
 )
 WHERE r.code = 'SUPER_ADMIN';
 
