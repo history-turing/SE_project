@@ -5,6 +5,7 @@ package com.whu.treehole.infra.mapper;
 import com.whu.treehole.infra.model.AuthCredentialData;
 import com.whu.treehole.infra.model.PermissionData;
 import com.whu.treehole.infra.model.RoleData;
+import com.whu.treehole.infra.model.UserRoleData;
 import com.whu.treehole.infra.model.UserCreateData;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -53,4 +54,8 @@ public interface AuthMapper {
                              @Param("statusReason") String statusReason,
                              @Param("statusUpdatedAt") LocalDateTime statusUpdatedAt,
                              @Param("statusUpdatedBy") Long statusUpdatedBy);
+
+    List<RoleData> selectAllRoles();
+
+    List<UserRoleData> selectAdminUsers();
 }

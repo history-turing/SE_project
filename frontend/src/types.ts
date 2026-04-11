@@ -1,4 +1,4 @@
-﻿export type AccentTone = 'rose' | 'jade' | 'gold' | 'ink';
+export type AccentTone = 'rose' | 'jade' | 'gold' | 'ink';
 
 export type Audience = '首页' | '校友圈';
 
@@ -25,6 +25,8 @@ export interface FeedPost {
   image?: string;
   anonymous?: boolean;
   location?: string;
+  mine?: boolean;
+  canDelete?: boolean;
   liked?: boolean;
   saved?: boolean;
 }
@@ -38,6 +40,7 @@ export interface PostComment {
   content: string;
   createdAt: string;
   mine: boolean;
+  canDelete?: boolean;
   replyToUserName?: string | null;
   replies: PostComment[];
 }
@@ -115,12 +118,59 @@ export interface UserProfile {
   stats: ProfileStat[];
 }
 
+export interface Role {
+  id?: number;
+  code: string;
+  name: string;
+}
+
+export interface Permission {
+  id?: number;
+  code: string;
+  name: string;
+}
+
 export interface AuthUser {
   id: number;
   username: string;
   email: string;
   name: string;
   avatar: string;
+  accountStatus: string;
+  roles: Role[];
+  permissions: Permission[];
+}
+
+export interface ReportSummary {
+  reportCode: string;
+  targetType: 'POST' | 'COMMENT' | 'USER';
+  targetCode: string;
+  reasonCode: string;
+  reasonDetail: string | null;
+  status: 'OPEN' | 'RESOLVED' | 'REJECTED';
+  resolutionCode: string | null;
+  resolutionNote: string | null;
+  createdAt: string;
+}
+
+export interface AdminUser {
+  id: number;
+  userCode: string;
+  username: string;
+  name: string;
+  accountStatus: string;
+  roles: Role[];
+}
+
+export interface AuditLog {
+  id: number;
+  actorUserId: number | null;
+  actorRoleSnapshot: string;
+  actionType: string;
+  targetType: string;
+  targetId: number | null;
+  targetCode: string;
+  createdAt: string;
 }
 
 export interface Message {

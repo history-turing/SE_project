@@ -128,6 +128,14 @@
           AND deleted_flag = 0
     </update>
 
+    <update id="restorePost">
+        UPDATE posts
+        SET deleted_flag = 0,
+            deleted_at = NULL,
+            deleted_by = NULL
+        WHERE id = #{postId}
+    </update>
+
     <insert id="insertPostComment" parameterType="com.whu.treehole.infra.model.PostCommentData" useGeneratedKeys="true" keyProperty="id">
         INSERT INTO post_comments (
             comment_code,
@@ -217,6 +225,25 @@
           AND (id = #{rootCommentId} OR root_comment_id = #{rootCommentId})
     </update>
 
+    <update id="restoreComment">
+        UPDATE post_comments
+        SET deleted_flag = 0,
+            deleted_at = NULL,
+            deleted_by = NULL,
+            updated_at = #{updatedAt}
+        WHERE id = #{commentId}
+    </update>
+
+    <update id="restoreCommentBranch">
+        UPDATE post_comments
+        SET deleted_flag = 0,
+            deleted_at = NULL,
+            deleted_by = NULL,
+            updated_at = #{updatedAt}
+        WHERE id = #{rootCommentId}
+           OR root_comment_id = #{rootCommentId}
+    </update>
+
     <select id="selectFollowState" resultType="com.whu.treehole.infra.model.FollowStateData">
         SELECT contact_id,
                user_id,
@@ -292,5 +319,48 @@
             #{createdAt}
         )
     </insert>
+
+    <insert id="insertReport" parameterType="com.whu.treehole.infra.model.ReportData" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO reports (
+            report_code,
+            target_type,
+            target_code,
+            reporter_user_id,
+            reason_code,
+            reason_detail,
+            status,
+            assigned_user_id,
+            resolution_code,
+            resolution_note,
+            resolved_at,
+            created_at,
+            updated_at
+        ) VALUES (
+            #{reportCode},
+            #{targetType},
+            #{targetCode},
+            #{reporterUserId},
+            #{reasonCode},
+            #{reasonDetail},
+            #{status},
+            #{assignedUserId},
+            #{resolutionCode},
+            #{resolutionNote},
+            #{resolvedAt},
+            #{createdAt},
+            #{updatedAt}
+        )
+    </insert>
+
+    <update id="resolveReport">
+        UPDATE reports
+        SET status = #{status},
+            resolution_code = #{resolutionCode},
+            resolution_note = #{resolutionNote},
+            resolved_at = #{resolvedAt},
+            assigned_user_id = #{assignedUserId},
+            updated_at = #{resolvedAt}
+        WHERE report_code = #{reportCode}
+    </update>
 
 </mapper>

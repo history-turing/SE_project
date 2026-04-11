@@ -15,6 +15,7 @@ import com.whu.treehole.infra.model.UserProfileData;
 import com.whu.treehole.server.support.PostTimeFormatter;
 import java.time.Clock;
 import java.time.LocalDateTime;
+import java.util.Objects;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Caching;
 import org.springframework.stereotype.Service;
@@ -83,7 +84,7 @@ public class PostCommandService {
         postData.setAnonymousFlag(request.anonymous());
         portalCommandMapper.insertPost(postData);
 
-        return toPostCard(requirePost(postData.getPostCode(), userId));
+        return toPostCard(requirePost(postData.getPostCode(), userId), userId);
     }
 
     @Transactional
@@ -155,7 +156,7 @@ public class PostCommandService {
         return postData;
     }
 
-    private PostCardDto toPostCard(PostData postData) {
+    private PostCardDto toPostCard(PostData postData, long userId) {
         String audience = AudienceType.ALUMNI.code().equals(postData.getAudienceType())
                 ? AudienceType.ALUMNI.label()
                 : AudienceType.HOME.label();
@@ -176,6 +177,9 @@ public class PostCommandService {
                 postData.getImageUrl(),
                 Boolean.TRUE.equals(postData.getAnonymousFlag()),
                 postData.getLocation(),
+                Objects.equals(postData.getCreatorUserId(), userId),
+                Objects.equals(postData.getCreatorUserId(), userId)
+                        || authorizationService.hasPermission(userId, "post.delete.any"),
                 Boolean.TRUE.equals(postData.getLiked()),
                 Boolean.TRUE.equals(postData.getSaved())
         );

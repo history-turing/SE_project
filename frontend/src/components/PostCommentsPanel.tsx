@@ -1,7 +1,13 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { createCommentReply, createPostComment, getPostComments } from '../services/api';
+import {
+  createCommentReply,
+  createPostComment,
+  deleteComment,
+  getPostComments,
+} from '../services/api';
 import { getLocalPostComments, saveLocalReply, saveLocalRootComment } from '../services/localCommentStore';
 import type { PostComment } from '../types';
+import { ReportDialog } from './ReportDialog';
 
 interface PostCommentsPanelProps {
   postId: string;
@@ -14,6 +20,7 @@ const DEFAULT_VISIBLE_COMMENTS = 3;
 function normalizeComment(comment: PostComment): PostComment {
   return {
     ...comment,
+    canDelete: Boolean(comment.canDelete ?? comment.mine),
     replies: (comment.replies ?? []).map(normalizeComment),
   };
 }
@@ -32,6 +39,19 @@ function countVisibleComments(comments: PostComment[]) {
   return comments.reduce((count, comment) => count + 1 + comment.replies.length, 0);
 }
 
+function removeCommentFromTree(comments: PostComment[], commentId: string) {
+  return comments
+    .filter((comment) => comment.id !== commentId)
+    .map((comment) => ({
+      ...comment,
+      replies: comment.replies.filter((reply) => reply.id !== commentId),
+    }));
+}
+
+function commentReportCode(postId: string, commentId: string) {
+  return `${postId}:${commentId}`;
+}
+
 export function PostCommentsPanel({ postId, initialCount, onCountChange }: PostCommentsPanelProps) {
   const onCountChangeRef = useRef(onCountChange);
   const [comments, setComments] = useState<PostComment[]>([]);
@@ -41,8 +61,10 @@ export function PostCommentsPanel({ postId, initialCount, onCountChange }: PostC
   const [replyContent, setReplyContent] = useState('');
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
+  const [deletingId, setDeletingId] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
   const [expanded, setExpanded] = useState(false);
+  const [reportTargetCode, setReportTargetCode] = useState('');
 
   useEffect(() => {
     onCountChangeRef.current = onCountChange;
@@ -160,6 +182,24 @@ export function PostCommentsPanel({ postId, initialCount, onCountChange }: PostC
     }
   }
 
+  async function handleDelete(commentId: string) {
+    if (deletingId) {
+      return;
+    }
+
+    setDeletingId(commentId);
+    setErrorMessage('');
+    try {
+      await deleteComment(postId, commentId);
+      syncComments(removeCommentFromTree(comments, commentId));
+    } catch (error) {
+      console.error('删除评论失败。', error);
+      setErrorMessage('删除评论失败，请稍后重试。');
+    } finally {
+      setDeletingId('');
+    }
+  }
+
   const visibleComments = useMemo(() => {
     if (expanded) {
       return comments;
@@ -199,7 +239,6 @@ export function PostCommentsPanel({ postId, initialCount, onCountChange }: PostC
 
       {errorMessage ? <p className="auth-error">{errorMessage}</p> : null}
       {loading ? <p className="search-empty">评论加载中...</p> : null}
-
       {!loading && !comments.length ? <p className="search-empty">还没有评论，来留下第一句话吧。</p> : null}
 
       <div className="post-comments__list">
@@ -213,13 +252,34 @@ export function PostCommentsPanel({ postId, initialCount, onCountChange }: PostC
               <small>{comment.createdAt}</small>
             </div>
             <p>{comment.content}</p>
-            <button
-              className="mini-button"
-              type="button"
-              onClick={() => setReplyTargetId(replyTargetId === comment.id ? '' : comment.id)}
-            >
-              回复
-            </button>
+            <div className="post-comment__actions">
+              <button
+                className="mini-button"
+                type="button"
+                onClick={() => setReplyTargetId(replyTargetId === comment.id ? '' : comment.id)}
+              >
+                回复
+              </button>
+              {comment.canDelete ? (
+                <button
+                  className="mini-button"
+                  type="button"
+                  disabled={deletingId === comment.id}
+                  onClick={() => void handleDelete(comment.id)}
+                >
+                  {deletingId === comment.id ? '删除中...' : '删除评论'}
+                </button>
+              ) : null}
+              {!comment.mine ? (
+                <button
+                  className="mini-button"
+                  type="button"
+                  onClick={() => setReportTargetCode(commentReportCode(postId, comment.id))}
+                >
+                  举报
+                </button>
+              ) : null}
+            </div>
 
             {replyTargetId === comment.id ? (
               <div className="post-comment__reply-box">
@@ -259,6 +319,27 @@ export function PostCommentsPanel({ postId, initialCount, onCountChange }: PostC
                       {reply.replyToUserName ? <b>@{reply.replyToUserName} </b> : null}
                       {reply.content}
                     </p>
+                    <div className="post-comment__actions">
+                      {reply.canDelete ? (
+                        <button
+                          className="mini-button"
+                          type="button"
+                          disabled={deletingId === reply.id}
+                          onClick={() => void handleDelete(reply.id)}
+                        >
+                          {deletingId === reply.id ? '删除中...' : '删除评论'}
+                        </button>
+                      ) : null}
+                      {!reply.mine ? (
+                        <button
+                          className="mini-button"
+                          type="button"
+                          onClick={() => setReportTargetCode(commentReportCode(postId, reply.id))}
+                        >
+                          举报
+                        </button>
+                      ) : null}
+                    </div>
                   </article>
                 ))}
               </div>
@@ -268,10 +349,21 @@ export function PostCommentsPanel({ postId, initialCount, onCountChange }: PostC
       </div>
 
       {shouldCollapse ? (
-        <button className="mini-button post-comments__toggle" type="button" onClick={() => setExpanded((current) => !current)}>
+        <button
+          className="mini-button post-comments__toggle"
+          type="button"
+          onClick={() => setExpanded((current) => !current)}
+        >
           {expanded ? '收起评论' : `展开全部 ${comments.length} 条评论`}
         </button>
       ) : null}
+
+      <ReportDialog
+        open={Boolean(reportTargetCode)}
+        targetType="COMMENT"
+        targetCode={reportTargetCode}
+        onClose={() => setReportTargetCode('')}
+      />
     </section>
   );
 }

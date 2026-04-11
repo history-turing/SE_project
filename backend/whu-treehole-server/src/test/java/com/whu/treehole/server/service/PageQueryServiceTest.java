@@ -8,6 +8,7 @@ import static org.mockito.Mockito.when;
 import com.whu.treehole.domain.dto.HomePageDto;
 import com.whu.treehole.domain.enums.AudienceType;
 import com.whu.treehole.domain.enums.TopicScope;
+import com.whu.treehole.infra.mapper.AuthMapper;
 import com.whu.treehole.infra.mapper.PortalQueryMapper;
 import com.whu.treehole.infra.model.PostData;
 import com.whu.treehole.server.support.PostTimeFormatter;
@@ -25,11 +26,17 @@ class PageQueryServiceTest {
     @Mock
     private PortalQueryMapper portalQueryMapper;
 
+    @Mock
+    private AuthMapper authMapper;
+
     private PageQueryService pageQueryService;
 
     @BeforeEach
     void setUp() {
-        pageQueryService = new PageQueryService(portalQueryMapper, new PostTimeFormatter());
+        pageQueryService = new PageQueryService(
+                portalQueryMapper,
+                new PostTimeFormatter(),
+                new AuthorizationService(authMapper));
     }
 
     @Test
@@ -53,6 +60,7 @@ class PageQueryServiceTest {
         when(portalQueryMapper.countTopics()).thenReturn(0);
         when(portalQueryMapper.selectRankings()).thenReturn(Collections.emptyList());
         when(portalQueryMapper.selectNotices()).thenReturn(Collections.emptyList());
+        when(authMapper.selectPermissionsByUserId(1L)).thenReturn(Collections.emptyList());
 
         HomePageDto homePage = pageQueryService.getHomePage(1L, null, null);
 

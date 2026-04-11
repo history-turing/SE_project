@@ -1,4 +1,4 @@
-﻿import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
+import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
 import {
   AUTH_TOKEN_STORAGE_KEY,
   ApiError,
@@ -13,9 +13,12 @@ interface AuthContextValue {
   user: AuthUser | null;
   loading: boolean;
   isAuthenticated: boolean;
+  isBanned: boolean;
   login: (username: string, password: string) => Promise<void>;
   register: (payload: { email: string; code: string; username: string; password: string }) => Promise<void>;
   logout: () => Promise<void>;
+  hasPermission: (permissionCode: string) => boolean;
+  hasRole: (roleCode: string) => boolean;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -98,15 +101,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }
 
+  function hasPermission(permissionCode: string) {
+    return user?.permissions?.some((permission) => permission.code === permissionCode) ?? false;
+  }
+
+  function hasRole(roleCode: string) {
+    return user?.roles?.some((role) => role.code === roleCode) ?? false;
+  }
+
   return (
     <AuthContext.Provider
       value={{
         user,
         loading,
         isAuthenticated: Boolean(user),
+        isBanned: user?.accountStatus === 'BANNED',
         login,
         register,
         logout,
+        hasPermission,
+        hasRole,
       }}
     >
       {children}

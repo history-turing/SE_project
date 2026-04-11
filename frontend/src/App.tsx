@@ -1,14 +1,15 @@
-﻿import type { ReactElement } from 'react';
+import type { ReactElement } from 'react';
 import { Navigate, Route, Routes } from 'react-router-dom';
 import { AppShell } from './components/AppShell';
 import { AppProvider } from './context/AppContext';
 import { useAuthContext } from './context/AuthContext';
 import { AlumniPage } from './pages/AlumniPage';
+import { AdminPage } from './pages/AdminPage';
 import { HomePage } from './pages/HomePage';
 import { LoginPage } from './pages/LoginPage';
 import { ProfilePage } from './pages/ProfilePage';
-import { SearchPage } from './pages/SearchPage';
 import { RegisterPage } from './pages/RegisterPage';
+import { SearchPage } from './pages/SearchPage';
 import { TopicsPage } from './pages/TopicsPage';
 
 function AuthLoading() {
@@ -39,6 +40,18 @@ function ProtectedApp() {
       <AppShell />
     </AppProvider>
   );
+}
+
+function AdminGuard() {
+  const { hasPermission } = useAuthContext();
+  const canAccessAdmin =
+    hasPermission('report.read.any') ||
+    hasPermission('user.ban') ||
+    hasPermission('role.assign.admin') ||
+    hasPermission('audit.read.moderation') ||
+    hasPermission('audit.read.all');
+
+  return canAccessAdmin ? <AdminPage /> : <Navigate replace to="/" />;
 }
 
 function GuestOnly({ children }: { children: ReactElement }) {
@@ -80,6 +93,7 @@ export default function App() {
         <Route path="/alumni" element={<AlumniPage />} />
         <Route path="/profile" element={<ProfilePage />} />
         <Route path="/search" element={<SearchPage />} />
+        <Route path="/admin" element={<AdminGuard />} />
       </Route>
       <Route path="*" element={<Navigate replace to="/" />} />
     </Routes>

@@ -1,7 +1,7 @@
 import userEvent from '@testing-library/user-event';
 import { screen } from '@testing-library/react';
 import { renderWithProviders } from '../test/renderWithProviders';
-import { ApiError, createPostComment, getPostComments } from '../services/api';
+import { ApiError, createPostComment, deleteComment, getPostComments } from '../services/api';
 import { clearLocalPostComments } from '../services/localCommentStore';
 import { PostCommentsPanel } from './PostCommentsPanel';
 
@@ -19,6 +19,7 @@ vi.mock('../services/api', () => ({
   getPostComments: vi.fn(),
   createPostComment: vi.fn(),
   createCommentReply: vi.fn(),
+  deleteComment: vi.fn(),
 }));
 
 function createRootComment(id: string, content: string) {
@@ -31,6 +32,7 @@ function createRootComment(id: string, content: string) {
     content,
     createdAt: '2026-04-11 10:00',
     mine: true,
+    canDelete: true,
     replyToUserName: null,
     replies: [],
   };
@@ -99,4 +101,24 @@ test('collapses root comments after three items and expands on demand', async ()
 
   expect(await screen.findByText('评论 4')).toBeInTheDocument();
   expect(screen.getByRole('button', { name: '收起评论' })).toBeInTheDocument();
+});
+
+test('shows delete for deletable comment and calls delete api', async () => {
+  const user = userEvent.setup();
+  const onCountChange = vi.fn();
+
+  vi.mocked(getPostComments).mockResolvedValueOnce({
+    total: 1,
+    comments: [createRootComment('comment-1', '可删除评论')],
+  });
+  vi.mocked(deleteComment).mockResolvedValue(undefined);
+
+  renderWithProviders(<PostCommentsPanel postId="home-1" initialCount={1} onCountChange={onCountChange} />);
+
+  expect(await screen.findByText('可删除评论')).toBeInTheDocument();
+  await user.click(screen.getByRole('button', { name: '删除评论' }));
+
+  expect(deleteComment).toHaveBeenCalledWith('home-1', 'comment-1');
+  expect(screen.queryByText('可删除评论')).not.toBeInTheDocument();
+  expect(onCountChange).toHaveBeenCalledWith(0);
 });

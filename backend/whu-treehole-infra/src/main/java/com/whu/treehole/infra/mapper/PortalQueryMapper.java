@@ -10,11 +10,13 @@ import com.whu.treehole.infra.model.PostCommentData;
 import com.whu.treehole.infra.model.PostData;
 import com.whu.treehole.infra.model.ProfileStatData;
 import com.whu.treehole.infra.model.RankingData;
+import com.whu.treehole.infra.model.ReportData;
 import com.whu.treehole.infra.model.StoryData;
 import com.whu.treehole.infra.model.TopicData;
 import com.whu.treehole.infra.model.TopicTagData;
 import com.whu.treehole.infra.model.UserBadgeData;
 import com.whu.treehole.infra.model.UserProfileData;
+import com.whu.treehole.infra.model.AuditLogData;
 import java.util.List;
 import org.apache.ibatis.annotations.Param;
 
@@ -54,6 +56,11 @@ public interface PortalQueryMapper {
     PostCommentData selectCommentByCode(@Param("postCode") String postCode,
                                         @Param("commentCode") String commentCode);
 
+    PostData selectPostByCodeIncludingDeleted(@Param("postCode") String postCode);
+
+    PostCommentData selectCommentByCodeIncludingDeleted(@Param("postCode") String postCode,
+                                                        @Param("commentCode") String commentCode);
+
     List<PostData> searchPosts(@Param("keyword") String keyword, @Param("userId") Long userId);
 
     List<StoryData> searchStories(@Param("keyword") String keyword);
@@ -75,4 +82,10 @@ public interface PortalQueryMapper {
     Integer countTodayPostsByAudience(@Param("audience") String audience);
 
     Integer countTopics();
+
+    List<ReportData> selectReports();
+
+    ReportData selectReportByCode(@Param("reportCode") String reportCode);
+
+    List<AuditLogData> selectAuditLogs();
 }

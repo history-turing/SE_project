@@ -19,6 +19,8 @@ public record PostCardDto(
         String image,
         Boolean anonymous,
         String location,
+        Boolean mine,
+        Boolean canDelete,
         Boolean liked,
         Boolean saved
 ) {

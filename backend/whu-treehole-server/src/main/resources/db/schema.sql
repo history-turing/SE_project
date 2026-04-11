@@ -221,6 +221,28 @@ CREATE TABLE IF NOT EXISTS audit_logs (
     CONSTRAINT fk_audit_logs_actor_user FOREIGN KEY (actor_user_id) REFERENCES users (id)
 );
 
+CREATE TABLE IF NOT EXISTS reports (
+    id BIGINT PRIMARY KEY AUTO_INCREMENT,
+    report_code VARCHAR(64) NOT NULL UNIQUE,
+    target_type VARCHAR(32) NOT NULL,
+    target_code VARCHAR(64) NOT NULL,
+    reporter_user_id BIGINT NOT NULL,
+    reason_code VARCHAR(64) NOT NULL,
+    reason_detail VARCHAR(255) NULL,
+    status VARCHAR(32) NOT NULL DEFAULT 'OPEN',
+    assigned_user_id BIGINT NULL,
+    resolution_code VARCHAR(64) NULL,
+    resolution_note VARCHAR(255) NULL,
+    resolved_at DATETIME NULL,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    KEY idx_reports_status (status),
+    KEY idx_reports_target_code (target_code),
+    KEY idx_reports_reporter_user_id (reporter_user_id),
+    CONSTRAINT fk_reports_reporter_user FOREIGN KEY (reporter_user_id) REFERENCES users (id),
+    CONSTRAINT fk_reports_assigned_user FOREIGN KEY (assigned_user_id) REFERENCES users (id)
+);
+
 CREATE TABLE IF NOT EXISTS alumni_stories (
     id BIGINT PRIMARY KEY AUTO_INCREMENT,
     story_code VARCHAR(64) NOT NULL UNIQUE,

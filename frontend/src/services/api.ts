@@ -1,6 +1,8 @@
 import type {
+  AdminUser,
   AlumniContact,
   Audience,
+  AuditLog,
   AuthUser,
   ComposePayload,
   Conversation,
@@ -10,6 +12,8 @@ import type {
   PostComment,
   PostCommentsData,
   RankingItem,
+  ReportSummary,
+  Role,
   SearchResult,
   StoryCard,
   TopicGroup,
@@ -70,6 +74,13 @@ export interface ToggleResult {
 export interface AuthPayload {
   token: string;
   user: AuthUser;
+}
+
+export interface ReportCreatePayload {
+  targetType: 'POST' | 'COMMENT' | 'USER';
+  targetCode: string;
+  reasonCode: string;
+  reasonDetail?: string;
 }
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? '/api/v1';
@@ -137,6 +148,12 @@ export function createPost(payload: ComposePayload) {
   });
 }
 
+export function deletePost(postId: string) {
+  return request<void>(`/posts/${postId}`, {
+    method: 'DELETE',
+  });
+}
+
 export function toggleLike(postId: string) {
   return request<ToggleResult>(`/posts/${postId}/likes/toggle`, {
     method: 'POST',
@@ -164,6 +181,74 @@ export function createCommentReply(postId: string, commentId: string, content: s
   return request<PostComment>(`/posts/${postId}/comments/${commentId}/replies`, {
     method: 'POST',
     body: JSON.stringify({ content }),
+  });
+}
+
+export function deleteComment(postId: string, commentId: string) {
+  return request<void>(`/posts/${postId}/comments/${commentId}`, {
+    method: 'DELETE',
+  });
+}
+
+export function createReport(payload: ReportCreatePayload) {
+  return request<ReportSummary>('/reports', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  });
+}
+
+export function getAdminReports() {
+  return request<ReportSummary[]>('/admin/reports');
+}
+
+export function resolveReport(reportCode: string, payload: { resolutionCode: string; resolutionNote?: string }) {
+  return request<void>(`/admin/reports/${reportCode}/resolve`, {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  });
+}
+
+export function getAdminUsers() {
+  return request<AdminUser[]>('/admin/users');
+}
+
+export function getAdminRoles() {
+  return request<Role[]>('/admin/roles');
+}
+
+export function getAuditLogs() {
+  return request<AuditLog[]>('/admin/audit-logs');
+}
+
+export function assignUserRole(userCode: string, roleCode: string) {
+  return request<void>(`/admin/users/${userCode}/roles`, {
+    method: 'POST',
+    body: JSON.stringify({ roleCode }),
+  });
+}
+
+export function banUser(userCode: string, reason: string) {
+  return request<void>(`/admin/users/${userCode}/ban`, {
+    method: 'POST',
+    body: JSON.stringify({ reason }),
+  });
+}
+
+export function unbanUser(userCode: string) {
+  return request<void>(`/admin/users/${userCode}/unban`, {
+    method: 'POST',
+  });
+}
+
+export function restorePost(postCode: string) {
+  return request<void>(`/admin/posts/${postCode}/restore`, {
+    method: 'POST',
+  });
+}
+
+export function restoreComment(postCode: string, commentCode: string) {
+  return request<void>(`/admin/posts/${postCode}/comments/${commentCode}/restore`, {
+    method: 'POST',
   });
 }
 

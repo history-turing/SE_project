@@ -93,6 +93,30 @@
         LIMIT 1
     </select>
 
+    <select id="selectAllRoles" resultType="com.whu.treehole.infra.model.RoleData">
+        SELECT id,
+               code,
+               name
+        FROM roles
+        ORDER BY id ASC
+    </select>
+
+    <select id="selectAdminUsers" resultType="com.whu.treehole.infra.model.UserRoleData">
+        SELECT u.id AS user_id,
+               u.user_code,
+               uc.username,
+               u.name,
+               COALESCE(u.account_status, 'ACTIVE') AS account_status,
+               r.id AS role_id,
+               r.code AS role_code,
+               r.name AS role_name
+        FROM users u
+                 LEFT JOIN user_credentials uc ON uc.user_id = u.id
+                 LEFT JOIN user_roles ur ON ur.user_id = u.id
+                 LEFT JOIN roles r ON r.id = ur.role_id
+        ORDER BY u.id ASC, r.id ASC
+    </select>
+
     <insert id="insertUser" parameterType="com.whu.treehole.infra.model.UserCreateData" useGeneratedKeys="true" keyProperty="id">
         INSERT INTO users (
             user_code,

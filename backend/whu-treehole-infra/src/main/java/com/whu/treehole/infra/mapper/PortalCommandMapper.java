@@ -8,6 +8,7 @@ import com.whu.treehole.infra.model.MessageData;
 import com.whu.treehole.infra.model.PostCommentData;
 import com.whu.treehole.infra.model.PostData;
 import com.whu.treehole.infra.model.AuditLogData;
+import com.whu.treehole.infra.model.ReportData;
 import java.time.LocalDateTime;
 import org.apache.ibatis.annotations.Param;
 
@@ -41,6 +42,9 @@ public interface PortalCommandMapper {
                         @Param("deletedBy") Long deletedBy,
                         @Param("deletedAt") LocalDateTime deletedAt);
 
+    void restorePost(@Param("postId") Long postId,
+                     @Param("updatedAt") LocalDateTime updatedAt);
+
     void insertPostComment(PostCommentData postCommentData);
 
     PostCommentData selectCommentById(@Param("commentId") Long commentId);
@@ -58,6 +62,12 @@ public interface PortalCommandMapper {
     void softDeleteCommentBranch(@Param("rootCommentId") Long rootCommentId,
                                  @Param("deletedBy") Long deletedBy,
                                  @Param("deletedAt") LocalDateTime deletedAt);
+
+    void restoreComment(@Param("commentId") Long commentId,
+                        @Param("updatedAt") LocalDateTime updatedAt);
+
+    void restoreCommentBranch(@Param("rootCommentId") Long rootCommentId,
+                              @Param("updatedAt") LocalDateTime updatedAt);
 
     FollowStateData selectFollowState(@Param("userId") Long userId,
                                       @Param("contactCode") String contactCode);
@@ -86,4 +96,13 @@ public interface PortalCommandMapper {
                               @Param("conversationCode") String conversationCode);
 
     void insertAuditLog(AuditLogData auditLogData);
+
+    void insertReport(ReportData reportData);
+
+    void resolveReport(@Param("reportCode") String reportCode,
+                       @Param("status") String status,
+                       @Param("resolutionCode") String resolutionCode,
+                       @Param("resolutionNote") String resolutionNote,
+                       @Param("resolvedAt") LocalDateTime resolvedAt,
+                       @Param("assignedUserId") Long assignedUserId);
 }

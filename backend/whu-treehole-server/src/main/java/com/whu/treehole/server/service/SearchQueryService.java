@@ -69,6 +69,8 @@ public class SearchQueryService {
                 postData.getImageUrl(),
                 Boolean.TRUE.equals(postData.getAnonymousFlag()),
                 postData.getLocation(),
+                false,
+                false,
                 Boolean.TRUE.equals(postData.getLiked()),
                 Boolean.TRUE.equals(postData.getSaved())
         );

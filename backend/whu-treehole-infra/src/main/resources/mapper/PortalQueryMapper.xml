@@ -229,6 +229,42 @@
           AND c.deleted_flag = 0
     </select>
 
+    <select id="selectPostByCodeIncludingDeleted" resultType="com.whu.treehole.infra.model.PostData">
+        SELECT p.id,
+               p.post_code,
+               p.creator_user_id,
+               p.title,
+               p.content,
+               p.author_name,
+               p.author_handle,
+               p.topic_name,
+               p.audience_type,
+               p.display_time,
+               p.like_count,
+               p.comment_count,
+               p.save_count,
+               p.accent_tone,
+               p.badge,
+               p.image_url,
+               p.anonymous_flag,
+               p.location,
+               p.deleted_flag,
+               p.deleted_at,
+               p.deleted_by,
+               p.created_at
+        FROM posts p
+        WHERE p.post_code = #{postCode}
+    </select>
+
+    <select id="selectCommentByCodeIncludingDeleted" resultType="com.whu.treehole.infra.model.PostCommentData">
+        SELECT
+        <include refid="PostCommentProjection"/>
+        FROM post_comments c
+                 INNER JOIN posts p ON p.id = c.post_id
+        WHERE p.post_code = #{postCode}
+          AND c.comment_code = #{commentCode}
+    </select>
+
     <select id="searchPosts" resultType="com.whu.treehole.infra.model.PostData">
         SELECT
         <include refid="PostProjection"/>
@@ -355,6 +391,58 @@
     <select id="countTopics" resultType="java.lang.Integer">
         SELECT COUNT(1)
         FROM topics
+    </select>
+
+    <select id="selectReports" resultType="com.whu.treehole.infra.model.ReportData">
+        SELECT id,
+               report_code,
+               target_type,
+               target_code,
+               reporter_user_id,
+               reason_code,
+               reason_detail,
+               status,
+               assigned_user_id,
+               resolution_code,
+               resolution_note,
+               resolved_at,
+               created_at,
+               updated_at
+        FROM reports
+        ORDER BY created_at DESC, id DESC
+    </select>
+
+    <select id="selectReportByCode" resultType="com.whu.treehole.infra.model.ReportData">
+        SELECT id,
+               report_code,
+               target_type,
+               target_code,
+               reporter_user_id,
+               reason_code,
+               reason_detail,
+               status,
+               assigned_user_id,
+               resolution_code,
+               resolution_note,
+               resolved_at,
+               created_at,
+               updated_at
+        FROM reports
+        WHERE report_code = #{reportCode}
+        LIMIT 1
+    </select>
+
+    <select id="selectAuditLogs" resultType="com.whu.treehole.infra.model.AuditLogData">
+        SELECT id,
+               actor_user_id,
+               actor_role_snapshot,
+               action_type,
+               target_type,
+               target_id,
+               target_code,
+               created_at
+        FROM audit_logs
+        ORDER BY created_at DESC, id DESC
     </select>
 
 </mapper>

@@ -56,6 +56,7 @@ interface AppStateValue {
   composePost: (payload: ComposePayload) => Promise<boolean>;
   toggleLike: (postId: string) => Promise<void>;
   toggleSave: (postId: string) => Promise<void>;
+  removePost: (postId: string) => void;
   setPostCommentCount: (postId: string, count: number) => void;
   toggleFollow: (userId: string) => Promise<void>;
   selectConversation: (conversationId: string) => Promise<void>;
@@ -237,6 +238,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }));
   }
 
+  function removePost(postId: string) {
+    setCommunityPosts((current) => current.filter((post) => post.id !== postId));
+    setAlumniPosts((current) => current.filter((post) => post.id !== postId));
+    setMyPosts((current) => current.filter((post) => post.id !== postId));
+  }
+
   async function composePost(payload: ComposePayload) {
     if (!payload.content.trim()) {
       return false;
@@ -330,6 +337,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         composePost,
         toggleLike,
         toggleSave,
+        removePost,
         setPostCommentCount,
         toggleFollow,
         selectConversation,

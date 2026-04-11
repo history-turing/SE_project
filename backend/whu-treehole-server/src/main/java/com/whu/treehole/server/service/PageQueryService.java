@@ -33,6 +33,7 @@ import com.whu.treehole.infra.model.TopicData;
 import com.whu.treehole.infra.model.TopicTagData;
 import com.whu.treehole.infra.model.UserBadgeData;
 import com.whu.treehole.infra.model.UserProfileData;
+import com.whu.treehole.server.service.AuthorizationService;
 import com.whu.treehole.server.support.PostTimeFormatter;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -49,10 +50,14 @@ public class PageQueryService {
 
     private final PortalQueryMapper portalQueryMapper;
     private final PostTimeFormatter postTimeFormatter;
+    private final AuthorizationService authorizationService;
 
-    public PageQueryService(PortalQueryMapper portalQueryMapper, PostTimeFormatter postTimeFormatter) {
+    public PageQueryService(PortalQueryMapper portalQueryMapper,
+                            PostTimeFormatter postTimeFormatter,
+                            AuthorizationService authorizationService) {
         this.portalQueryMapper = portalQueryMapper;
         this.postTimeFormatter = postTimeFormatter;
+        this.authorizationService = authorizationService;
     }
 
     @Cacheable(cacheNames = "homePage", key = "#userId + ':' + (#topic == null ? '' : #topic) + ':' + (#keyword == null ? '' : #keyword)")
@@ -60,7 +65,8 @@ public class PageQueryService {
         List<TopicData> campusTopics = portalQueryMapper.selectTopics(TopicScope.CAMPUS.name());
         Map<String, List<String>> topicTags = buildTopicTagMap(TopicScope.CAMPUS.name());
         List<PostCardDto> posts = toPostCards(
-                portalQueryMapper.selectPosts(AudienceType.HOME.code(), normalize(topic), normalize(keyword), userId));
+                portalQueryMapper.selectPosts(AudienceType.HOME.code(), normalize(topic), normalize(keyword), userId),
+                userId);
 
         HomeStatsDto stats = new HomeStatsDto(
                 String.valueOf(defaultInt(portalQueryMapper.countTodayPostsByAudience(AudienceType.HOME.code()))),
@@ -97,7 +103,7 @@ public class PageQueryService {
                 portalQueryMapper.selectStories().stream().map(this::toStoryCard).toList(),
                 portalQueryMapper.selectContacts(userId).stream().map(this::toContactCard).toList(),
                 toPostCards(portalQueryMapper.selectPosts(
-                        AudienceType.ALUMNI.code(), normalize(topic), normalize(keyword), userId))
+                        AudienceType.ALUMNI.code(), normalize(topic), normalize(keyword), userId), userId)
         );
     }
 
@@ -116,8 +122,8 @@ public class PageQueryService {
 
         return new ProfilePageDto(
                 toUserProfile(userProfile),
-                toPostCards(portalQueryMapper.selectMyPosts(userId)),
-                toPostCards(portalQueryMapper.selectSavedPosts(userId)),
+                toPostCards(portalQueryMapper.selectMyPosts(userId), userId),
+                toPostCards(portalQueryMapper.selectSavedPosts(userId), userId),
                 conversations,
                 activeConversationId
         );
@@ -217,11 +223,11 @@ public class PageQueryService {
         return new ProfileStatDto(data.getStatLabel(), data.getStatValue());
     }
 
-    private List<PostCardDto> toPostCards(List<PostData> postDataList) {
-        return postDataList.stream().map(this::toPostCard).toList();
+    private List<PostCardDto> toPostCards(List<PostData> postDataList, long userId) {
+        return postDataList.stream().map(post -> toPostCard(post, userId)).toList();
     }
 
-    private PostCardDto toPostCard(PostData postData) {
+    private PostCardDto toPostCard(PostData postData, long userId) {
         String audience = AudienceType.ALUMNI.code().equals(postData.getAudienceType())
                 ? AudienceType.ALUMNI.label()
                 : AudienceType.HOME.label();
@@ -243,6 +249,9 @@ public class PageQueryService {
                 postData.getImageUrl(),
                 Boolean.TRUE.equals(postData.getAnonymousFlag()),
                 postData.getLocation(),
+                Objects.equals(postData.getCreatorUserId(), userId),
+                Objects.equals(postData.getCreatorUserId(), userId)
+                        || authorizationService.hasPermission(userId, "post.delete.any"),
                 Boolean.TRUE.equals(postData.getLiked()),
                 Boolean.TRUE.equals(postData.getSaved())
         );

@@ -8,11 +8,17 @@ import { Icon } from './Icon';
 
 export function AppShell() {
   const { composePost, profile } = useAppContext();
-  const { logout, user } = useAuthContext();
+  const { hasPermission, logout, user } = useAuthContext();
   const [openComposer, setOpenComposer] = useState(false);
   const [searchKeyword, setSearchKeyword] = useState('');
   const navigate = useNavigate();
   const location = useLocation();
+  const canAccessAdmin =
+    hasPermission('report.read.any') ||
+    hasPermission('user.ban') ||
+    hasPermission('role.assign.admin') ||
+    hasPermission('audit.read.moderation') ||
+    hasPermission('audit.read.all');
 
   useEffect(() => {
     const keyword = new URLSearchParams(location.search).get('q') ?? '';
@@ -48,6 +54,11 @@ export function AppShell() {
                 {item.label}
               </NavLink>
             ))}
+            {canAccessAdmin ? (
+              <NavLink to="/admin" className={({ isActive }) => `nav-link${isActive ? ' is-active' : ''}`}>
+                管理台
+              </NavLink>
+            ) : null}
           </nav>
 
           <div className="topbar__actions">
@@ -67,6 +78,11 @@ export function AppShell() {
             <button className="ghost-button" type="button" aria-label="通知">
               <Icon name="bell" className="icon" />
             </button>
+            {canAccessAdmin ? (
+              <NavLink className="secondary-button secondary-button--compact" to="/admin">
+                管理台
+              </NavLink>
+            ) : null}
             <button className="primary-button" type="button" onClick={() => setOpenComposer(true)}>
               <Icon name="plus" className="icon" />
               发布
@@ -90,9 +106,7 @@ export function AppShell() {
         <div className="container site-footer__inner">
           <div>
             <p className="site-footer__title">武大树洞</p>
-            <p className="site-footer__copy">
-              一个把校园生活、成长烦恼与校友记忆连成一张网的树洞式社区。
-            </p>
+            <p className="site-footer__copy">一个把校园生活、成长情绪与校友记忆连成一张网的树洞式社区。</p>
           </div>
           <div className="site-footer__links">
             <a href="#rules">使用守则</a>
@@ -115,11 +129,7 @@ export function AppShell() {
         ))}
       </nav>
 
-      <ComposerModal
-        open={openComposer}
-        onClose={() => setOpenComposer(false)}
-        onSubmit={composePost}
-      />
+      <ComposerModal open={openComposer} onClose={() => setOpenComposer(false)} onSubmit={composePost} />
     </div>
   );
 }

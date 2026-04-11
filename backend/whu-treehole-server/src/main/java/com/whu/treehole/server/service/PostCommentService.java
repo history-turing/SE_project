@@ -49,7 +49,7 @@ public class PostCommentService {
 
     @Cacheable(cacheNames = "postComments", key = "#postCode")
     public PostCommentsDto listComments(long userId, String postCode) {
-        requirePost(postCode, userId);
+        PostData post = requirePost(postCode, userId);
         List<PostCommentData> records = portalQueryMapper.selectCommentsByPostCode(postCode);
         Map<Long, PostCommentDto> roots = new LinkedHashMap<>();
         Map<Long, String> commentCodes = new LinkedHashMap<>();
@@ -62,7 +62,7 @@ public class PostCommentService {
 
         for (PostCommentData record : records) {
             if (record.getParentCommentId() == null) {
-                roots.put(record.getId(), toCommentDto(record, postCode, null, null, userId));
+                roots.put(record.getId(), toCommentDto(record, postCode, null, null, userId, post.getCreatorUserId()));
             }
         }
 
@@ -80,7 +80,8 @@ public class PostCommentService {
                     postCode,
                     commentCodes.get(record.getParentCommentId()),
                     userNames.get(record.getReplyToUserId()),
-                    userId));
+                    userId,
+                    post.getCreatorUserId()));
             roots.put(record.getRootCommentId(), copyWithReplies(parent, replies));
         }
 
@@ -177,7 +178,8 @@ public class PostCommentService {
                 post.getPostCode(),
                 parent == null ? null : parent.getCommentCode(),
                 parent == null ? null : parent.getAuthorName(),
-                userId);
+                userId,
+                post.getCreatorUserId());
     }
 
     private PostData requirePost(String postCode, long userId) {
@@ -200,7 +202,8 @@ public class PostCommentService {
                                         String postCode,
                                         String parentCommentCode,
                                         String replyToUserName,
-                                        long userId) {
+                                        long userId,
+                                        Long postOwnerUserId) {
         return new PostCommentDto(
                 data.getCommentCode(),
                 postCode,
@@ -210,6 +213,7 @@ public class PostCommentService {
                 data.getContent(),
                 postTimeFormatter.format(data.getCreatedAt(), null),
                 Objects.equals(data.getUserId(), userId),
+                canDeleteComment(userId, postOwnerUserId, data),
                 replyToUserName,
                 new ArrayList<>()
         );
@@ -225,6 +229,7 @@ public class PostCommentService {
                 source.content(),
                 source.createdAt(),
                 source.mine(),
+                source.canDelete(),
                 source.replyToUserName(),
                 replies
         );
@@ -238,5 +243,12 @@ public class PostCommentService {
             return "comment.delete.target";
         }
         return "comment.delete.any";
+    }
+
+    private boolean canDeleteComment(long userId, Long postOwnerUserId, PostCommentData comment) {
+        return Objects.equals(comment.getUserId(), userId)
+                || Objects.equals(postOwnerUserId, userId)
+                || Objects.equals(comment.getReplyToUserId(), userId)
+                || authorizationService.hasPermission(userId, "comment.delete.any");
     }
 }

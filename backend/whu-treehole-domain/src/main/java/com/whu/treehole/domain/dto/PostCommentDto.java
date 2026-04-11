@@ -11,6 +11,7 @@ public record PostCommentDto(
         String content,
         String createdAt,
         Boolean mine,
+        Boolean canDelete,
         String replyToUserName,
         List<PostCommentDto> replies
 ) {
