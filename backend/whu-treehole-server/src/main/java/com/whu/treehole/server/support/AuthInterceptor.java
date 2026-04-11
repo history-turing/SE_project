@@ -3,7 +3,9 @@ package com.whu.treehole.server.support;
 /* 认证拦截器负责从 Bearer Token 恢复当前登录用户。 */
 
 import com.whu.treehole.common.exception.BusinessException;
+import com.whu.treehole.domain.enums.AccountStatus;
 import com.whu.treehole.server.config.AuthProperties;
+import com.whu.treehole.server.service.AuthorizationService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.data.redis.core.StringRedisTemplate;
@@ -17,10 +19,14 @@ public class AuthInterceptor implements HandlerInterceptor {
 
     private final StringRedisTemplate stringRedisTemplate;
     private final AuthProperties authProperties;
+    private final AuthorizationService authorizationService;
 
-    public AuthInterceptor(StringRedisTemplate stringRedisTemplate, AuthProperties authProperties) {
+    public AuthInterceptor(StringRedisTemplate stringRedisTemplate,
+                           AuthProperties authProperties,
+                           AuthorizationService authorizationService) {
         this.stringRedisTemplate = stringRedisTemplate;
         this.authProperties = authProperties;
+        this.authorizationService = authorizationService;
     }
 
     @Override
@@ -52,7 +58,8 @@ public class AuthInterceptor implements HandlerInterceptor {
         }
 
         stringRedisTemplate.expire(sessionKey(token), authProperties.getSessionTtl());
-        AuthContextHolder.set(userId, token);
+        AccountStatus accountStatus = authorizationService.resolveAccountStatus(userId);
+        AuthContextHolder.set(userId, token, accountStatus);
         return true;
     }
 
