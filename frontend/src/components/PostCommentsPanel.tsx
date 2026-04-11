@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { createCommentReply, createPostComment, getPostComments } from '../services/api';
 import type { PostComment } from '../types';
 
@@ -8,7 +8,15 @@ interface PostCommentsPanelProps {
   onCountChange: (count: number) => void;
 }
 
+function normalizeComment(comment: PostComment): PostComment {
+  return {
+    ...comment,
+    replies: comment.replies ?? [],
+  };
+}
+
 export function PostCommentsPanel({ postId, initialCount, onCountChange }: PostCommentsPanelProps) {
+  const onCountChangeRef = useRef(onCountChange);
   const [comments, setComments] = useState<PostComment[]>([]);
   const [total, setTotal] = useState(initialCount);
   const [content, setContent] = useState('');
@@ -16,6 +24,11 @@ export function PostCommentsPanel({ postId, initialCount, onCountChange }: PostC
   const [replyContent, setReplyContent] = useState('');
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
+
+  useEffect(() => {
+    onCountChangeRef.current = onCountChange;
+  }, [onCountChange]);
 
   useEffect(() => {
     let cancelled = false;
@@ -25,12 +38,16 @@ export function PostCommentsPanel({ postId, initialCount, onCountChange }: PostC
       try {
         const data = await getPostComments(postId);
         if (!cancelled) {
-          setComments(data.comments);
+          setComments(data.comments.map(normalizeComment));
           setTotal(data.total);
-          onCountChange(data.total);
+          onCountChangeRef.current(data.total);
+          setErrorMessage('');
         }
       } catch (error) {
         console.error('加载评论失败。', error);
+        if (!cancelled) {
+          setErrorMessage('评论区暂时不可用，请稍后再试。');
+        }
       } finally {
         if (!cancelled) {
           setLoading(false);
@@ -43,11 +60,14 @@ export function PostCommentsPanel({ postId, initialCount, onCountChange }: PostC
     return () => {
       cancelled = true;
     };
-  }, [onCountChange, postId]);
+  }, [postId]);
 
-  function syncTotal(nextTotal: number) {
-    setTotal(nextTotal);
-    onCountChange(nextTotal);
+  function syncTotal(updater: number | ((current: number) => number)) {
+    setTotal((current) => {
+      const nextTotal = typeof updater === 'function' ? updater(current) : updater;
+      onCountChangeRef.current(nextTotal);
+      return nextTotal;
+    });
   }
 
   async function submitRootComment() {
@@ -57,13 +77,15 @@ export function PostCommentsPanel({ postId, initialCount, onCountChange }: PostC
     }
 
     setSubmitting(true);
+    setErrorMessage('');
     try {
-      const created = await createPostComment(postId, next);
+      const created = normalizeComment(await createPostComment(postId, next));
       setComments((current) => [...current, created]);
       setContent('');
-      syncTotal(total + 1);
+      syncTotal((current) => current + 1);
     } catch (error) {
       console.error('发表评论失败。', error);
+      setErrorMessage('评论发送失败，请确认登录状态后重试。');
     } finally {
       setSubmitting(false);
     }
@@ -76,8 +98,9 @@ export function PostCommentsPanel({ postId, initialCount, onCountChange }: PostC
     }
 
     setSubmitting(true);
+    setErrorMessage('');
     try {
-      const created = await createCommentReply(postId, rootCommentId, next);
+      const created = normalizeComment(await createCommentReply(postId, rootCommentId, next));
       setComments((current) =>
         current.map((comment) =>
           comment.id === rootCommentId
@@ -87,9 +110,10 @@ export function PostCommentsPanel({ postId, initialCount, onCountChange }: PostC
       );
       setReplyContent('');
       setReplyTargetId('');
-      syncTotal(total + 1);
+      syncTotal((current) => current + 1);
     } catch (error) {
       console.error('回复评论失败。', error);
+      setErrorMessage('回复发送失败，请稍后再试。');
     } finally {
       setSubmitting(false);
     }
@@ -106,18 +130,27 @@ export function PostCommentsPanel({ postId, initialCount, onCountChange }: PostC
         <textarea
           placeholder="写下你的评论..."
           value={content}
-          onChange={(event) => setContent(event.target.value)}
+          onChange={(event) => {
+            setContent(event.target.value);
+            if (errorMessage) {
+              setErrorMessage('');
+            }
+          }}
         />
-        <button className="mini-button" type="button" onClick={() => void submitRootComment()}>
-          发送评论
+        <button
+          className="mini-button"
+          type="button"
+          disabled={submitting || !content.trim()}
+          onClick={() => void submitRootComment()}
+        >
+          {submitting ? '发送中...' : '发送评论'}
         </button>
       </div>
 
+      {errorMessage ? <p className="auth-error">{errorMessage}</p> : null}
       {loading ? <p className="search-empty">评论加载中...</p> : null}
 
-      {!loading && !comments.length ? (
-        <p className="search-empty">还没有评论，来留下第一句话吧。</p>
-      ) : null}
+      {!loading && !comments.length ? <p className="search-empty">还没有评论，来留下第一句话吧。</p> : null}
 
       <div className="post-comments__list">
         {comments.map((comment) => (
@@ -143,10 +176,20 @@ export function PostCommentsPanel({ postId, initialCount, onCountChange }: PostC
                 <textarea
                   placeholder={`回复 ${comment.author}...`}
                   value={replyContent}
-                  onChange={(event) => setReplyContent(event.target.value)}
+                  onChange={(event) => {
+                    setReplyContent(event.target.value);
+                    if (errorMessage) {
+                      setErrorMessage('');
+                    }
+                  }}
                 />
-                <button className="mini-button" type="button" onClick={() => void submitReply(comment.id)}>
-                  发送回复
+                <button
+                  className="mini-button"
+                  type="button"
+                  disabled={submitting || !replyContent.trim()}
+                  onClick={() => void submitReply(comment.id)}
+                >
+                  {submitting ? '发送中...' : '发送回复'}
                 </button>
               </div>
             ) : null}

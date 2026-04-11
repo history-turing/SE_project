@@ -1,6 +1,7 @@
 package com.whu.treehole.server.service;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doAnswer;
@@ -46,6 +47,58 @@ class PostCommentServiceTest {
     private ArgumentCaptor<PostCommentData> commentCaptor;
 
     @Test
+    void shouldCreateRootCommentAndIncreaseCount() {
+        PostCommentService service = new PostCommentService(
+                portalQueryMapper,
+                portalCommandMapper,
+                new PostTimeFormatter(),
+                FIXED_CLOCK);
+
+        PostData post = new PostData();
+        post.setId(8L);
+        post.setPostCode("home-1");
+
+        UserProfileData user = new UserProfileData();
+        user.setId(1L);
+        user.setName("测试用户");
+        user.setCollege("信管");
+        user.setGradeYear("2022");
+
+        PostCommentData saved = new PostCommentData();
+        saved.setId(30L);
+        saved.setCommentCode("comment-root");
+        saved.setPostId(8L);
+        saved.setUserId(1L);
+        saved.setParentCommentId(null);
+        saved.setRootCommentId(null);
+        saved.setReplyToUserId(null);
+        saved.setAuthorName("测试用户");
+        saved.setAuthorHandle("信管 路 2022");
+        saved.setContent("新的评论");
+        saved.setCreatedAt(LocalDateTime.of(2026, 4, 11, 9, 30));
+
+        when(portalCommandMapper.selectPostByCode("home-1", 1L)).thenReturn(post);
+        when(portalQueryMapper.selectUserProfile(1L)).thenReturn(user);
+        doAnswer(invocation -> {
+            PostCommentData inserted = invocation.getArgument(0);
+            inserted.setId(30L);
+            return null;
+        }).when(portalCommandMapper).insertPostComment(any(PostCommentData.class));
+        when(portalCommandMapper.selectCommentById(30L)).thenReturn(saved);
+
+        PostCommentDto created = service.createComment(1L, "home-1", new CommentCreateRequest("新的评论"));
+
+        verify(portalCommandMapper).insertPostComment(commentCaptor.capture());
+        verify(portalCommandMapper).increasePostCommentCount(8L);
+        assertEquals("comment-root", created.id());
+        assertNull(created.parentCommentCode());
+        assertEquals("新的评论", created.content());
+        assertEquals(0, created.replies().size());
+        assertNull(commentCaptor.getValue().getParentCommentId());
+        assertNull(commentCaptor.getValue().getRootCommentId());
+    }
+
+    @Test
     void shouldCreateReplyAndReturnNestedComments() {
         PostCommentService service = new PostCommentService(
                 portalQueryMapper,
@@ -72,7 +125,7 @@ class PostCommentServiceTest {
         root.setRootCommentId(20L);
         root.setReplyToUserId(null);
         root.setAuthorName("原评论人");
-        root.setAuthorHandle("计院 · 2020");
+        root.setAuthorHandle("计院 路 2020");
         root.setContent("第一条评论");
         root.setCreatedAt(LocalDateTime.of(2026, 4, 11, 9, 20));
 
@@ -85,7 +138,7 @@ class PostCommentServiceTest {
         reply.setRootCommentId(20L);
         reply.setReplyToUserId(2L);
         reply.setAuthorName("测试用户");
-        reply.setAuthorHandle("信管 · 2022");
+        reply.setAuthorHandle("信管 路 2022");
         reply.setContent("收到，谢谢");
         reply.setCreatedAt(LocalDateTime.of(2026, 4, 11, 9, 30));
 
@@ -100,7 +153,11 @@ class PostCommentServiceTest {
         when(portalCommandMapper.selectCommentById(21L)).thenReturn(reply);
         when(portalQueryMapper.selectCommentsByPostCode("home-1")).thenReturn(List.of(root, reply));
 
-        PostCommentDto created = service.replyComment(1L, "home-1", "comment-root", new CommentCreateRequest("收到，谢谢"));
+        PostCommentDto created = service.replyComment(
+                1L,
+                "home-1",
+                "comment-root",
+                new CommentCreateRequest("收到，谢谢"));
         PostCommentsDto comments = service.listComments(1L, "home-1");
 
         verify(portalCommandMapper).insertPostComment(commentCaptor.capture());
@@ -135,7 +192,8 @@ class PostCommentServiceTest {
         when(portalCommandMapper.selectPostByCode("home-1", 1L)).thenReturn(post);
         when(portalQueryMapper.selectCommentByCode("home-1", "comment-reply")).thenReturn(reply);
 
-        BusinessException exception = assertThrows(BusinessException.class,
+        BusinessException exception = assertThrows(
+                BusinessException.class,
                 () -> service.replyComment(1L, "home-1", "comment-reply", new CommentCreateRequest("不允许三级回复")));
 
         assertEquals(4005, exception.getCode());

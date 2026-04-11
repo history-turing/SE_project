@@ -230,6 +230,12 @@ button {
   color: var(--muted);
 }
 
+.mini-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.58;
+  transform: none;
+}
+
 .mini-button.is-active {
   color: var(--jade);
   border-color: rgba(29, 139, 98, 0.2);
@@ -383,7 +389,15 @@ button {
 }
 
 .quote-card span {
+  display: block;
   color: var(--muted);
+}
+
+.quote-card small {
+  display: block;
+  margin-top: 8px;
+  color: rgba(114, 98, 106, 0.82);
+  font-size: 0.84rem;
 }
 
 .stat-grid {

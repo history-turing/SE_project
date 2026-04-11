@@ -72,5 +72,7 @@ public interface PortalQueryMapper {
 
     Integer countPostsByAudience(@Param("audience") String audience);
 
+    Integer countTodayPostsByAudience(@Param("audience") String audience);
+
     Integer countTopics();
 }

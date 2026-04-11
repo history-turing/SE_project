@@ -5,6 +5,7 @@ import type {
   ComposePayload,
   Conversation,
   FeedPost,
+  HomeStats,
   NoticeItem,
   PostComment,
   PostCommentsData,
@@ -34,11 +35,7 @@ export class ApiError extends Error {
 }
 
 export interface HomePageData {
-  stats: {
-    treeholeUpdates: string;
-    hotTopics: string;
-    alumniPosts: string;
-  };
+  stats: HomeStats;
   topicHighlights: TopicGroup[];
   rankings: RankingItem[];
   notices: NoticeItem[];

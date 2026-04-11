@@ -334,6 +334,14 @@
         WHERE audience_type = #{audience}
     </select>
 
+    <select id="countTodayPostsByAudience" resultType="java.lang.Integer">
+        SELECT COUNT(1)
+        FROM posts
+        WHERE audience_type = #{audience}
+          AND created_at >= CURRENT_DATE()
+          AND created_at < DATE_ADD(CURRENT_DATE(), INTERVAL 1 DAY)
+    </select>
+
     <select id="countTopics" resultType="java.lang.Integer">
         SELECT COUNT(1)
         FROM topics

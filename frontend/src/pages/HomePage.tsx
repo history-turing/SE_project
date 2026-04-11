@@ -1,15 +1,46 @@
-﻿import { Link, useSearchParams } from 'react-router-dom';
-import { useAppContext } from '../context/AppContext';
+import { useEffect, useRef, useState } from 'react';
+import { Link, useSearchParams } from 'react-router-dom';
 import { Icon } from '../components/Icon';
 import { PostCard } from '../components/PostCard';
+import { useAppContext } from '../context/AppContext';
+import { campusMoodQuotes, encouragementQuotes } from '../data/homeQuotes';
 
 const homeFilters = ['全部', '校园日常', '学业交流', '生活闲聊', '表白墙', '失物招领'];
+const ROTATION_INTERVAL_MS = 2 * 60 * 1000;
+
+function getRotationIndex(length: number, offset = 0) {
+  return Math.floor(Date.now() / ROTATION_INTERVAL_MS + offset) % length;
+}
 
 export function HomePage() {
-  const { communityPosts, topicGroups, topicRankings, campusNotices } = useAppContext();
+  const { communityPosts, topicGroups, topicRankings, campusNotices, homeStats, refreshHomeStats } =
+    useAppContext();
+  const refreshHomeStatsRef = useRef(refreshHomeStats);
   const [searchParams, setSearchParams] = useSearchParams();
+  const [campusQuoteIndex, setCampusQuoteIndex] = useState(() => getRotationIndex(campusMoodQuotes.length));
+  const [encouragementIndex, setEncouragementIndex] = useState(() =>
+    getRotationIndex(encouragementQuotes.length, 1),
+  );
   const activeTopic = searchParams.get('topic') ?? '全部';
   const keyword = searchParams.get('q') ?? '';
+  const campusQuote = campusMoodQuotes[campusQuoteIndex];
+  const encouragement = encouragementQuotes[encouragementIndex];
+
+  useEffect(() => {
+    refreshHomeStatsRef.current = refreshHomeStats;
+  }, [refreshHomeStats]);
+
+  useEffect(() => {
+    void refreshHomeStatsRef.current();
+
+    const timer = window.setInterval(() => {
+      setCampusQuoteIndex(getRotationIndex(campusMoodQuotes.length));
+      setEncouragementIndex(getRotationIndex(encouragementQuotes.length, 1));
+      void refreshHomeStatsRef.current();
+    }, ROTATION_INTERVAL_MS);
+
+    return () => window.clearInterval(timer);
+  }, []);
 
   const filteredPosts = communityPosts.filter((post) => {
     const matchesTopic = activeTopic === '全部' || post.topic === activeTopic;
@@ -56,21 +87,23 @@ export function HomePage() {
           <p className="hero-panel__title">今日树洞温度</p>
           <div className="stat-grid">
             <article className="stat-card">
-              <span>树洞更新</span>
-              <strong>{communityPosts.length}</strong>
+              <span>今日树洞更新</span>
+              <strong>{homeStats.treeholeUpdates}</strong>
             </article>
             <article className="stat-card">
               <span>热议话题</span>
-              <strong>{topicGroups.length}</strong>
+              <strong>{homeStats.hotTopics}</strong>
             </article>
             <article className="stat-card">
-              <span>校友新帖</span>
-              <strong>{topicGroups.filter((item) => item.destination === '/alumni').length}</strong>
+              <span>今日校友新帖</span>
+              <strong>{homeStats.alumniPosts}</strong>
             </article>
           </div>
           <div className="quote-card">
-            <p>“大江流日夜，慷慨歌未央。”</p>
-            <span>晚安，武大人。</span>
+            <p>“{campusQuote.text}”</p>
+            <span>{encouragement.text}</span>
+            <small>{campusQuote.source}</small>
+            <small>{encouragement.source}</small>
           </div>
         </div>
       </section>

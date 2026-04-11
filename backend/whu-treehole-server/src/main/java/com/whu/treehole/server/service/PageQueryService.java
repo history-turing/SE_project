@@ -63,9 +63,9 @@ public class PageQueryService {
                 portalQueryMapper.selectPosts(AudienceType.HOME.code(), normalize(topic), normalize(keyword), userId));
 
         HomeStatsDto stats = new HomeStatsDto(
-                String.valueOf(defaultInt(portalQueryMapper.countPostsByAudience(AudienceType.HOME.code()))),
+                String.valueOf(defaultInt(portalQueryMapper.countTodayPostsByAudience(AudienceType.HOME.code()))),
                 String.valueOf(defaultInt(portalQueryMapper.countTopics())),
-                String.valueOf(defaultInt(portalQueryMapper.countPostsByAudience(AudienceType.ALUMNI.code()))));
+                String.valueOf(defaultInt(portalQueryMapper.countTodayPostsByAudience(AudienceType.ALUMNI.code()))));
 
         return new HomePageDto(
                 stats,

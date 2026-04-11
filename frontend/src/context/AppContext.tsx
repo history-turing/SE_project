@@ -28,6 +28,7 @@ import type {
   ComposePayload,
   Conversation,
   FeedPost,
+  HomeStats,
   NoticeItem,
   RankingItem,
   StoryCard,
@@ -42,6 +43,7 @@ interface AppStateValue {
   topicGroups: TopicGroup[];
   topicRankings: RankingItem[];
   campusNotices: NoticeItem[];
+  homeStats: HomeStats;
   alumniStories: StoryCard[];
   alumniContacts: AlumniContact[];
   likedIds: string[];
@@ -50,6 +52,7 @@ interface AppStateValue {
   conversations: Conversation[];
   activeConversationId: string;
   profile: UserProfile;
+  refreshHomeStats: () => Promise<void>;
   composePost: (payload: ComposePayload) => Promise<boolean>;
   toggleLike: (postId: string) => Promise<void>;
   toggleSave: (postId: string) => Promise<void>;
@@ -60,6 +63,11 @@ interface AppStateValue {
 }
 
 const AppContext = createContext<AppStateValue | null>(null);
+const defaultHomeStats: HomeStats = {
+  treeholeUpdates: String(initialCommunityPosts.length),
+  hotTopics: String(defaultTopicGroups.length),
+  alumniPosts: String(initialAlumniPosts.length),
+};
 
 function bumpCount(value: number, add: boolean) {
   return add ? value + 1 : Math.max(0, value - 1);
@@ -79,6 +87,11 @@ function extractIds(posts: FeedPost[], matcher: (post: FeedPost) => boolean) {
   return Array.from(new Set(posts.filter(matcher).map((post) => post.id)));
 }
 
+function incrementStat(value: string) {
+  const parsed = Number.parseInt(value, 10);
+  return String(Number.isNaN(parsed) ? 1 : parsed + 1);
+}
+
 export function AppProvider({ children }: { children: ReactNode }) {
   const [communityPosts, setCommunityPosts] = useState(initialCommunityPosts);
   const [alumniPosts, setAlumniPosts] = useState(initialAlumniPosts);
@@ -86,6 +99,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [topicGroups, setTopicGroups] = useState(defaultTopicGroups);
   const [topicRankings, setTopicRankings] = useState(defaultTopicRankings);
   const [campusNotices, setCampusNotices] = useState(defaultCampusNotices);
+  const [homeStats, setHomeStats] = useState(defaultHomeStats);
   const [alumniStories, setAlumniStories] = useState(defaultAlumniStories);
   const [alumniContacts, setAlumniContacts] = useState(defaultAlumniContacts);
   const [likedIds, setLikedIds] = useState<string[]>([]);
@@ -134,6 +148,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         setTopicGroups(topicsPage.topics);
         setTopicRankings(topicsPage.rankings);
         setCampusNotices(homePage.notices);
+        setHomeStats(homePage.stats);
         setAlumniStories(alumniPage.stories);
         setAlumniContacts(alumniPage.contacts);
         setLikedIds(extractIds(interactionSource, (post) => Boolean((post as FeedPost & { liked?: boolean }).liked)));
@@ -158,6 +173,15 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setCommunityPosts((current) => current.map((post) => (post.id === postId ? updater(post) : post)));
     setAlumniPosts((current) => current.map((post) => (post.id === postId ? updater(post) : post)));
     setMyPosts((current) => current.map((post) => (post.id === postId ? updater(post) : post)));
+  }
+
+  async function refreshHomeStats() {
+    try {
+      const page = await getHomePage();
+      setHomeStats(page.stats);
+    } catch (error) {
+      console.error('首页统计刷新失败。', error);
+    }
   }
 
   async function toggleLike(postId: string) {
@@ -222,8 +246,16 @@ export function AppProvider({ children }: { children: ReactNode }) {
       const nextPost = await createPostRequest(payload);
       if (payload.audience === '首页') {
         setCommunityPosts((current) => [nextPost, ...current]);
+        setHomeStats((current) => ({
+          ...current,
+          treeholeUpdates: incrementStat(current.treeholeUpdates),
+        }));
       } else {
         setAlumniPosts((current) => [nextPost, ...current]);
+        setHomeStats((current) => ({
+          ...current,
+          alumniPosts: incrementStat(current.alumniPosts),
+        }));
       }
       setMyPosts((current) => [nextPost, ...current]);
       return true;
@@ -285,6 +317,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         topicGroups,
         topicRankings,
         campusNotices,
+        homeStats,
         alumniStories,
         alumniContacts,
         likedIds,
@@ -293,6 +326,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         conversations,
         activeConversationId,
         profile,
+        refreshHomeStats,
         composePost,
         toggleLike,
         toggleSave,

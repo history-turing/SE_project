@@ -47,6 +47,12 @@ export interface PostCommentsData {
   total: number;
 }
 
+export interface HomeStats {
+  treeholeUpdates: string;
+  hotTopics: string;
+  alumniPosts: string;
+}
+
 export interface TopicGroup {
   id: string;
   name: string;
