@@ -101,7 +101,7 @@
           ON c.id = p.conversation_id
         JOIN dm_conversation_participants peer_p
           ON peer_p.conversation_id = c.id
-         AND peer_p.user_id <> p.user_id
+         AND peer_p.user_id &lt;&gt; p.user_id
          AND peer_p.deleted_at IS NULL
         JOIN users peer
           ON peer.id = peer_p.user_id
@@ -167,7 +167,7 @@
           ON c.id = self_p.conversation_id
         JOIN dm_conversation_participants peer_p
           ON peer_p.conversation_id = c.id
-         AND peer_p.user_id <> self_p.user_id
+         AND peer_p.user_id &lt;&gt; self_p.user_id
          AND peer_p.deleted_at IS NULL
         JOIN users peer
           ON peer.id = peer_p.user_id
@@ -243,7 +243,7 @@
         SET unread_count = unread_count + 1,
             updated_at = CURRENT_TIMESTAMP
         WHERE conversation_id = #{conversationId}
-          AND user_id <> #{senderUserId}
+          AND user_id &lt;&gt; #{senderUserId}
           AND deleted_at IS NULL
     </update>
 </mapper>
