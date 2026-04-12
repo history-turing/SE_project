@@ -12,6 +12,7 @@ import java.time.Clock;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -25,6 +26,7 @@ public class AnnouncementService {
     private final AuditLogService auditLogService;
     private final Clock clock;
 
+    @Autowired
     public AnnouncementService(PortalQueryMapper portalQueryMapper,
                                PortalCommandMapper portalCommandMapper,
                                AuthorizationService authorizationService,

@@ -43,6 +43,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 
@@ -56,6 +57,7 @@ public class PageQueryService {
     private final AnnouncementService announcementService;
     private final Clock clock;
 
+    @Autowired
     public PageQueryService(PortalQueryMapper portalQueryMapper,
                             PostTimeFormatter postTimeFormatter,
                             AuthorizationService authorizationService,

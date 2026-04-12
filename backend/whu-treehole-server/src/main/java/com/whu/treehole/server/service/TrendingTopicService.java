@@ -21,6 +21,7 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -40,6 +41,7 @@ public class TrendingTopicService {
     private final AuditLogService auditLogService;
     private final Clock clock;
 
+    @Autowired
     public TrendingTopicService(PortalQueryMapper portalQueryMapper,
                                 PortalCommandMapper portalCommandMapper,
                                 AuthorizationService authorizationService,
