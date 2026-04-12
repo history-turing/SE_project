@@ -25,11 +25,11 @@ bash scripts/deploy.sh
 ```
 
 - `scripts/deploy.sh` now does the following in order:
-  1. Starts `mysql` and `redis`
-  2. Waits for both services to become healthy
+  1. Starts `mysql`, `redis`, `rabbitmq`, and `nacos`
+  2. Waits for all foundational services to become healthy
   3. Applies `schema.sql` and `data.sql`
-  4. Starts `backend` and `frontend`
-  5. Waits for both services to become healthy
+  4. Starts `backend`, `message-service`, `gateway`, and `frontend`
+  5. Waits for all application services to become healthy
 
 ## Verification Baseline
 
@@ -41,6 +41,15 @@ docker compose --env-file .env.production -p se_project ps
 curl -sI http://127.0.0.1/ | head -n 1
 ```
 
+- Internal microservice health checks:
+
+```bash
+cd /root/SE_project_feature-rbac-moderation
+docker compose --env-file .env.production -p se_project exec -T gateway wget -qO- http://127.0.0.1:8080/actuator/health
+docker compose --env-file .env.production -p se_project exec -T backend wget -qO- http://127.0.0.1:8080/actuator/health
+docker compose --env-file .env.production -p se_project exec -T message-service wget -qO- http://127.0.0.1:8081/actuator/health
+```
+
 - API smoke checks:
 
 ```bash
@@ -49,6 +58,7 @@ curl -s -H 'Authorization:Bearer verify-trending-announcement' http://127.0.0.1/
 curl -s -H 'Authorization:Bearer verify-trending-announcement' http://127.0.0.1/api/v1/admin/trending-topics
 curl -s -H 'Authorization:Bearer verify-trending-announcement' http://127.0.0.1/api/v1/announcements
 curl -s -H 'Authorization:Bearer verify-trending-announcement' http://127.0.0.1/api/v1/announcements/popup
+curl -s -H 'X-User-Id: 7' http://127.0.0.1/api/v1/dm/conversations
 ```
 
 - Temporary verification session bootstrap:
@@ -65,6 +75,7 @@ docker exec -i se_project_redis_1 redis-cli -a "$REDIS_PASSWORD" SETEX auth:sess
 ## Known Pitfalls
 
 - Do not verify backend health from the host with `http://127.0.0.1:8080`; backend is not published to the host and is only reachable inside the compose network.
+- Do not verify `message-service` or `gateway` from unpublished host ports; use `docker compose ps` plus in-container health checks.
 - Use `docker compose ps` health status as the source of truth for container readiness.
 - Remote server currently emits noisy WSL NAT warnings during SSH command execution. Treat them as transport noise unless the command exit code is non-zero.
 - `frontend/dist`, `frontend/node_modules`, `frontend/*.tsbuildinfo`, and `GenHash.*` are local build artifacts or helper files and should not be tracked.

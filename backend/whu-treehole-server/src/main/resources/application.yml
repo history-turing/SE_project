@@ -1,6 +1,10 @@
 spring:
   application:
     name: whu-treehole-backend
+  cloud:
+    nacos:
+      discovery:
+        server-addr: ${TREEHOLE_NACOS_SERVER_ADDR:localhost:8848}
   profiles:
     default: local
   datasource:

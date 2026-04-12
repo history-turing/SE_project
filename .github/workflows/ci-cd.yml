@@ -45,7 +45,10 @@ jobs:
 
       - name: Test backend modules
         working-directory: backend
-        run: mvn -q -s settings.xml -pl whu-treehole-server -am test
+        run: mvn -q -s settings.xml test
+
+      - name: Validate compose contract
+        run: docker compose --env-file .env.example -f docker-compose.yml config >/tmp/compose.out
 
   deploy:
     if: github.ref == 'refs/heads/main'
@@ -76,4 +79,6 @@ jobs:
           export TREEHOLE_DEPLOY_ENV_FILE=.env.production
           export TREEHOLE_COMPOSE_PROJECT=se_project
           bash scripts/deploy.sh
+          docker compose --env-file .env.production -p se_project ps
+          curl -sI http://127.0.0.1/ | head -n 1
           EOF

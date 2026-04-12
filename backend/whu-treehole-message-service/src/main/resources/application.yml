@@ -1,6 +1,10 @@
 spring:
   application:
     name: whu-treehole-message-service
+  cloud:
+    nacos:
+      discovery:
+        server-addr: ${TREEHOLE_NACOS_SERVER_ADDR:localhost:8848}
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
     url: jdbc:mysql://${TREEHOLE_DB_HOST:localhost}:${TREEHOLE_DB_PORT:3306}/${TREEHOLE_DB_NAME:se_project}?useUnicode=true&characterEncoding=UTF-8&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true&useSSL=false
@@ -22,6 +26,12 @@ mybatis:
   mapper-locations: classpath*:mapper/*.xml
   configuration:
     map-underscore-to-camel-case: true
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
 
 server:
   port: ${TREEHOLE_MESSAGE_PORT:8081}

@@ -70,19 +70,23 @@ read_env_value() {
 MYSQL_DATABASE="$(read_env_value MYSQL_DATABASE)"
 MYSQL_ROOT_PASSWORD="$(read_env_value MYSQL_ROOT_PASSWORD)"
 
-compose_cmd up -d --build mysql redis
+compose_cmd up -d --build mysql redis rabbitmq nacos
 
 wait_for_service mysql healthy 36 5
 wait_for_service redis healthy 24 5
+wait_for_service rabbitmq healthy 24 5
+wait_for_service nacos healthy 36 5
 
 compose_cmd exec -T mysql mysql -uroot -p"${MYSQL_ROOT_PASSWORD}" -D "${MYSQL_DATABASE}" \
   < backend/whu-treehole-server/src/main/resources/db/schema.sql
 compose_cmd exec -T mysql mysql -uroot -p"${MYSQL_ROOT_PASSWORD}" -D "${MYSQL_DATABASE}" \
   < backend/whu-treehole-server/src/main/resources/db/data.sql
 
-compose_cmd up -d --build backend frontend
+compose_cmd up -d --build backend message-service gateway frontend
 
 wait_for_service backend healthy 36 5
+wait_for_service message-service healthy 36 5
+wait_for_service gateway healthy 36 5
 wait_for_service frontend healthy 24 5
 
 compose_cmd ps
