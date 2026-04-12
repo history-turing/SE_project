@@ -101,6 +101,40 @@ class AuthServiceTest {
     }
 
     @Test
+    void shouldLoginWithSeededXieweiPassword() {
+        AuthCredentialData credentialData = new AuthCredentialData();
+        credentialData.setUserId(1L);
+        credentialData.setUsername("xiewei");
+        credentialData.setEmail("xiewei@whu.edu.cn");
+        credentialData.setPasswordHash("$2a$10$HX6zs3CimxyK5wGQ5VQc.OEzghS2H85ooidaxrV9VSpaX2Rl/EKc2");
+
+        UserProfileData profileData = new UserProfileData();
+        profileData.setId(1L);
+        profileData.setUserCode("xiewei");
+        profileData.setName("xiewei");
+        profileData.setAvatarUrl("https://example.com/avatar/xiewei.jpg");
+
+        RoleData roleData = new RoleData();
+        roleData.setId(10L);
+        roleData.setCode("SUPER_ADMIN");
+        roleData.setName("Super Admin");
+
+        when(authMapper.selectCredentialByUsername("xiewei")).thenReturn(credentialData);
+        when(authMapper.selectCredentialByUserId(1L)).thenReturn(credentialData);
+        when(portalQueryMapper.selectUserProfile(1L)).thenReturn(profileData);
+        when(authMapper.selectRolesByUserId(1L)).thenReturn(List.of(roleData));
+        when(authMapper.selectPermissionsByUserId(1L)).thenReturn(List.of());
+        when(authMapper.selectAccountStatusByUserId(1L)).thenReturn(AccountStatus.ACTIVE.name());
+
+        AuthResponse response = authService.login(new LoginRequest("xiewei", "xiewei123"));
+
+        assertNotNull(response);
+        assertNotNull(response.token());
+        assertEquals("xiewei", response.user().username());
+        assertEquals("SUPER_ADMIN", response.user().roles().get(0).code());
+    }
+
+    @Test
     void shouldLoginWithSeededCodexPassword() {
         AuthCredentialData credentialData = new AuthCredentialData();
         credentialData.setUserId(7L);

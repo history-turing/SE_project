@@ -81,7 +81,7 @@ INSERT INTO user_credentials (
 SELECT u.id,
        'xiewei@whu.edu.cn',
        'xiewei',
-       '$2a$10$Mdu24keixSODrG.puvozUOpLv0tTVtLG7F7xmSfPkvXEgkggNEq.2',
+       '$2a$10$HX6zs3CimxyK5wGQ5VQc.OEzghS2H85ooidaxrV9VSpaX2Rl/EKc2',
        '2026-04-08 10:05:00',
        '2026-04-08 10:05:00',
        '2026-04-08 10:05:00',
@@ -94,6 +94,12 @@ WHERE u.user_code = 'xiewei'
       WHERE uc.username = 'xiewei'
          OR uc.email = 'xiewei@whu.edu.cn'
   );
+
+UPDATE user_credentials
+SET password_hash = '$2a$10$HX6zs3CimxyK5wGQ5VQc.OEzghS2H85ooidaxrV9VSpaX2Rl/EKc2',
+    updated_at = CURRENT_TIMESTAMP
+WHERE username = 'xiewei'
+   OR email = 'xiewei@whu.edu.cn';
 
 -- Stable test accounts for remote acceptance and RBAC verification.
 INSERT INTO users (user_code, name, tagline, college, grade_year, bio, avatar_url, created_at)
