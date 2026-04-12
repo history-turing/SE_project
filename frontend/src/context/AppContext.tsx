@@ -72,7 +72,11 @@ interface AppStateValue {
   recallMessage: (messageId: string) => Promise<void>;
 }
 
+const HOME_AUDIENCE = '首页';
+const ALUMNI_AUDIENCE = '校友圈';
+
 const AppContext = createContext<AppStateValue | null>(null);
+
 const defaultHomeStats: HomeStats = {
   treeholeUpdates: String(initialCommunityPosts.length),
   hotTopics: String(defaultTopicGroups.length),
@@ -148,6 +152,40 @@ function updateConversationListFromDetail(
   });
 }
 
+function syncFeedState(args: {
+  homePosts?: FeedPost[];
+  alumniPosts?: FeedPost[];
+  myPosts?: FeedPost[];
+  savedPosts?: FeedPost[];
+}) {
+  const myPosts = args.myPosts ?? [];
+  const savedPosts = args.savedPosts ?? [];
+  const communityPosts = uniquePosts([
+    ...(args.homePosts ?? []),
+    ...myPosts.filter((post) => post.audience === HOME_AUDIENCE),
+    ...savedPosts.filter((post) => post.audience === HOME_AUDIENCE),
+  ]);
+  const alumniPosts = uniquePosts([
+    ...(args.alumniPosts ?? []),
+    ...myPosts.filter((post) => post.audience === ALUMNI_AUDIENCE),
+    ...savedPosts.filter((post) => post.audience === ALUMNI_AUDIENCE),
+  ]);
+  const interactionSource = uniquePosts([...communityPosts, ...alumniPosts, ...myPosts, ...savedPosts]);
+
+  return {
+    communityPosts,
+    alumniPosts,
+    likedIds: extractIds(
+      interactionSource,
+      (post) => Boolean((post as FeedPost & { liked?: boolean }).liked),
+    ),
+    savedIds: extractIds(
+      interactionSource,
+      (post) => Boolean((post as FeedPost & { saved?: boolean }).saved),
+    ),
+  };
+}
+
 export function AppProvider({ children }: { children: ReactNode }) {
   const [communityPosts, setCommunityPosts] = useState(initialCommunityPosts);
   const [alumniPosts, setAlumniPosts] = useState(initialAlumniPosts);
@@ -177,58 +215,101 @@ export function AppProvider({ children }: { children: ReactNode }) {
     let cancelled = false;
 
     async function bootstrap() {
-      try {
-        const [homePage, topicsPage, alumniPage, profilePage, dmConversations] = await Promise.all([
+      const [homePageResult, topicsPageResult, alumniPageResult, profilePageResult, dmConversationsResult] =
+        await Promise.allSettled([
           getHomePage(),
           getTopicsPage(),
           getAlumniPage(),
           getProfilePage(),
-          getDmConversations().catch(() => []),
+          getDmConversations(),
         ]);
 
-        if (cancelled) {
-          return;
-        }
+      if (cancelled) {
+        return;
+      }
 
-        const mergedCommunityPosts = uniquePosts([
-          ...homePage.posts,
-          ...profilePage.myPosts.filter((post) => post.audience === '首页'),
-          ...profilePage.savedPosts.filter((post) => post.audience === '首页'),
-        ]);
-        const mergedAlumniPosts = uniquePosts([
-          ...alumniPage.posts,
-          ...profilePage.myPosts.filter((post) => post.audience === '校友圈'),
-          ...profilePage.savedPosts.filter((post) => post.audience === '校友圈'),
-        ]);
-        const interactionSource = uniquePosts([
-          ...mergedCommunityPosts,
-          ...mergedAlumniPosts,
-          ...profilePage.myPosts,
-          ...profilePage.savedPosts,
-        ]);
+      const homePage = homePageResult.status === 'fulfilled' ? homePageResult.value : null;
+      const topicsPage = topicsPageResult.status === 'fulfilled' ? topicsPageResult.value : null;
+      const alumniPage = alumniPageResult.status === 'fulfilled' ? alumniPageResult.value : null;
+      const profilePage = profilePageResult.status === 'fulfilled' ? profilePageResult.value : null;
+      const dmConversations =
+        dmConversationsResult.status === 'fulfilled' ? dmConversationsResult.value : null;
 
-        setCommunityPosts(mergedCommunityPosts);
-        setAlumniPosts(mergedAlumniPosts);
-        setMyPosts(profilePage.myPosts);
+      if (!homePage) {
+        console.error(
+          'Home page bootstrap failed, keeping current homepage content.',
+          homePageResult.status === 'rejected' ? homePageResult.reason : undefined,
+        );
+      }
+      if (!topicsPage) {
+        console.error(
+          'Topics bootstrap failed, keeping current topic content.',
+          topicsPageResult.status === 'rejected' ? topicsPageResult.reason : undefined,
+        );
+      }
+      if (!alumniPage) {
+        console.error(
+          'Alumni bootstrap failed, keeping current alumni content.',
+          alumniPageResult.status === 'rejected' ? alumniPageResult.reason : undefined,
+        );
+      }
+      if (!profilePage) {
+        console.error(
+          'Profile bootstrap failed, keeping current profile content.',
+          profilePageResult.status === 'rejected' ? profilePageResult.reason : undefined,
+        );
+      }
+      if (!dmConversations) {
+        console.error(
+          'Conversation bootstrap failed, keeping current messaging content.',
+          dmConversationsResult.status === 'rejected' ? dmConversationsResult.reason : undefined,
+        );
+      }
+
+      if (topicsPage) {
         setTopicGroups(topicsPage.topics);
         setTopicRankings(topicsPage.rankings);
+      }
+
+      if (homePage) {
         setCampusNotices(homePage.notices);
         setHomeStats(homePage.stats);
+      }
+
+      if (alumniPage) {
         setAlumniStories(alumniPage.stories);
         setAlumniContacts(alumniPage.contacts);
-        setLikedIds(
-          extractIds(interactionSource, (post) => Boolean((post as FeedPost & { liked?: boolean }).liked)),
-        );
-        setSavedIds(
-          extractIds(interactionSource, (post) => Boolean((post as FeedPost & { saved?: boolean }).saved)),
-        );
         setFollowedIds(
           alumniPage.contacts
             .filter((contact) => Boolean((contact as AlumniContact & { followed?: boolean }).followed))
             .map((contact) => contact.id),
         );
-        setProfile(profilePage.profile);
+      }
 
+      if (profilePage) {
+        setMyPosts(profilePage.myPosts);
+        setProfile(profilePage.profile);
+      }
+
+      if (homePage || alumniPage || profilePage) {
+        const nextFeedState = syncFeedState({
+          homePosts: homePage?.posts,
+          alumniPosts: alumniPage?.posts,
+          myPosts: profilePage?.myPosts,
+          savedPosts: profilePage?.savedPosts,
+        });
+
+        if (nextFeedState.communityPosts.length) {
+          setCommunityPosts(nextFeedState.communityPosts);
+        }
+        if (nextFeedState.alumniPosts.length) {
+          setAlumniPosts(nextFeedState.alumniPosts);
+        }
+        setLikedIds(nextFeedState.likedIds);
+        setSavedIds(nextFeedState.savedIds);
+      }
+
+      if (dmConversations) {
         if (dmConversations.length) {
           const firstConversation = dmConversations[0];
           setConversations(dmConversations);
@@ -238,8 +319,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
           setActiveConversationCode('');
           setActiveConversation(null);
         }
-      } catch (error) {
-        console.error('加载后端数据失败，当前继续使用前端默认数据。', error);
       }
     }
 
@@ -269,6 +348,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         if (cancelled) {
           return;
         }
+
         const normalizedDetail =
           detail.unreadCount > 0
             ? {
@@ -383,7 +463,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
     try {
       const nextPost = await createPostRequest(payload);
-      if (payload.audience === '首页') {
+      if (payload.audience === HOME_AUDIENCE) {
         setCommunityPosts((current) => [nextPost, ...current]);
         setHomeStats((current) => ({
           ...current,

@@ -241,6 +241,7 @@
         <include refid="PostProjection"/>
         FROM posts p
                  LEFT JOIN post_interactions i ON i.post_id = p.id AND i.user_id = #{userId}
+                 LEFT JOIN users author ON author.id = p.creator_user_id
         <where>
             p.audience_type = #{audience}
             AND p.deleted_flag = 0
