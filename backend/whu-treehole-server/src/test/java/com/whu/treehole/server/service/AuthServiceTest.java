@@ -110,7 +110,7 @@ class AuthServiceTest {
 
         UserProfileData profileData = new UserProfileData();
         profileData.setId(7L);
-        profileData.setUserCode("user-codex-super");
+        profileData.setUserCode("codex-super");
         profileData.setName("codex-super");
         profileData.setAvatarUrl("https://example.com/avatar/codex-super.jpg");
 

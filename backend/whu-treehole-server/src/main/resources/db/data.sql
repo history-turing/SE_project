@@ -97,7 +97,7 @@ WHERE u.user_code = 'xiewei'
 
 -- Stable test accounts for remote acceptance and RBAC verification.
 INSERT INTO users (user_code, name, tagline, college, grade_year, bio, avatar_url, created_at)
-SELECT 'user-codex-super',
+SELECT 'codex-super',
        'codex-super',
        '用于超级管理员验收的稳定测试账号。',
        '测试账号',
@@ -108,7 +108,7 @@ SELECT 'user-codex-super',
 WHERE NOT EXISTS (
     SELECT 1
     FROM users u
-    WHERE u.user_code = 'user-codex-super'
+    WHERE u.user_code = 'codex-super'
 )
   AND NOT EXISTS (
     SELECT 1
@@ -118,7 +118,7 @@ WHERE NOT EXISTS (
   );
 
 INSERT INTO users (user_code, name, tagline, college, grade_year, bio, avatar_url, created_at)
-SELECT 'user-codex-user',
+SELECT 'codex-user',
        'codex-user',
        '用于普通用户验收的稳定测试账号。',
        '测试账号',
@@ -129,7 +129,7 @@ SELECT 'user-codex-user',
 WHERE NOT EXISTS (
     SELECT 1
     FROM users u
-    WHERE u.user_code = 'user-codex-user'
+    WHERE u.user_code = 'codex-user'
 )
   AND NOT EXISTS (
     SELECT 1
@@ -139,7 +139,7 @@ WHERE NOT EXISTS (
   );
 
 INSERT INTO users (user_code, name, tagline, college, grade_year, bio, avatar_url, created_at)
-SELECT 'user-codex-promote',
+SELECT 'codex-promote',
        'codex-promote',
        '用于角色提升验收的稳定测试账号。',
        '测试账号',
@@ -150,7 +150,7 @@ SELECT 'user-codex-promote',
 WHERE NOT EXISTS (
     SELECT 1
     FROM users u
-    WHERE u.user_code = 'user-codex-promote'
+    WHERE u.user_code = 'codex-promote'
 )
   AND NOT EXISTS (
     SELECT 1
@@ -178,7 +178,7 @@ SELECT u.id,
        '2026-04-13 09:00:00',
        '2026-04-13 09:00:00'
 FROM users u
-WHERE u.user_code = 'user-codex-super'
+WHERE u.user_code = 'codex-super'
   AND NOT EXISTS (
       SELECT 1
       FROM user_credentials uc
@@ -205,7 +205,7 @@ SELECT u.id,
        '2026-04-13 09:00:00',
        '2026-04-13 09:00:00'
 FROM users u
-WHERE u.user_code = 'user-codex-user'
+WHERE u.user_code = 'codex-user'
   AND NOT EXISTS (
       SELECT 1
       FROM user_credentials uc
@@ -232,7 +232,7 @@ SELECT u.id,
        '2026-04-13 09:00:00',
        '2026-04-13 09:00:00'
 FROM users u
-WHERE u.user_code = 'user-codex-promote'
+WHERE u.user_code = 'codex-promote'
   AND NOT EXISTS (
       SELECT 1
       FROM user_credentials uc
@@ -243,7 +243,7 @@ WHERE u.user_code = 'user-codex-promote'
 INSERT INTO user_badges (user_id, badge_name, sort_order)
 SELECT u.id, '测试账号', 1
 FROM users u
-WHERE u.user_code IN ('user-codex-super', 'user-codex-user', 'user-codex-promote')
+WHERE u.user_code IN ('codex-super', 'codex-user', 'codex-promote')
   AND NOT EXISTS (
       SELECT 1
       FROM user_badges ub
@@ -254,7 +254,7 @@ WHERE u.user_code IN ('user-codex-super', 'user-codex-user', 'user-codex-promote
 INSERT INTO user_profile_stats (user_id, stat_label, stat_value, sort_order)
 SELECT u.id, '已发树洞', '0', 1
 FROM users u
-WHERE u.user_code IN ('user-codex-super', 'user-codex-user', 'user-codex-promote')
+WHERE u.user_code IN ('codex-super', 'codex-user', 'codex-promote')
   AND NOT EXISTS (
       SELECT 1
       FROM user_profile_stats ups
@@ -265,7 +265,7 @@ WHERE u.user_code IN ('user-codex-super', 'user-codex-user', 'user-codex-promote
 INSERT INTO user_profile_stats (user_id, stat_label, stat_value, sort_order)
 SELECT u.id, '收藏内容', '0', 2
 FROM users u
-WHERE u.user_code IN ('user-codex-super', 'user-codex-user', 'user-codex-promote')
+WHERE u.user_code IN ('codex-super', 'codex-user', 'codex-promote')
   AND NOT EXISTS (
       SELECT 1
       FROM user_profile_stats ups
@@ -276,7 +276,7 @@ WHERE u.user_code IN ('user-codex-super', 'user-codex-user', 'user-codex-promote
 INSERT INTO user_profile_stats (user_id, stat_label, stat_value, sort_order)
 SELECT u.id, '已建立私信', '0', 3
 FROM users u
-WHERE u.user_code IN ('user-codex-super', 'user-codex-user', 'user-codex-promote')
+WHERE u.user_code IN ('codex-super', 'codex-user', 'codex-promote')
   AND NOT EXISTS (
       SELECT 1
       FROM user_profile_stats ups
