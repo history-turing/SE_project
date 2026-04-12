@@ -3,3 +3,8 @@
 .env.local
 .env.production
 .env.*.local
+frontend/dist/
+frontend/node_modules/
+frontend/*.tsbuildinfo
+GenHash.java
+GenHash.class
