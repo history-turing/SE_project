@@ -307,13 +307,52 @@ INSERT IGNORE INTO conversations (id, conversation_code, owner_user_id, peer_nam
 (3, 'seat', 1, '图书馆占座狂魔', '自习室情报官', 'https://example.com/conversations/seat.jpg', '不好意思，那个座位已经有人了。', '星期一', 0, '2026-04-06 09:00:00');
 
 INSERT IGNORE INTO dm_conversations (id, conversation_code, conversation_type, status, created_by, last_message_id, last_message_at, created_at, updated_at) VALUES
-(1, 'dm-1001', 'SINGLE', 'ACTIVE', 1, NULL, NULL, '2026-04-08 10:00:00', '2026-04-08 10:00:00');
+(1, 'dm-1001', 'SINGLE', 'ACTIVE', 1, 2, '2026-04-08 10:12:00', '2026-04-08 10:00:00', '2026-04-08 10:12:00');
 
 INSERT IGNORE INTO dm_conversation_participants (
     id, conversation_id, user_id, last_read_message_id, last_read_at, unread_count,
     pinned_flag, muted_flag, cleared_at, deleted_at, created_at, updated_at
 ) VALUES
-(1, 1, 1, NULL, NULL, 0, 0, 0, NULL, NULL, '2026-04-08 10:00:00', '2026-04-08 10:00:00');
+(1, 1, 1, 2, '2026-04-08 10:12:00', 0, 0, 0, NULL, NULL, '2026-04-08 10:00:00', '2026-04-08 10:12:00');
+
+INSERT INTO dm_conversation_participants (
+    id, conversation_id, user_id, last_read_message_id, last_read_at, unread_count,
+    pinned_flag, muted_flag, cleared_at, deleted_at, created_at, updated_at
+)
+SELECT 2, 1, u.id, 1, '2026-04-08 10:05:00', 1, 0, 0, NULL, NULL, '2026-04-08 10:00:00', '2026-04-08 10:12:00'
+FROM users u
+WHERE u.user_code = 'xiewei'
+  AND NOT EXISTS (
+      SELECT 1
+      FROM dm_conversation_participants p
+      WHERE p.id = 2
+  );
+
+INSERT INTO dm_messages (
+    id, message_code, client_message_id, conversation_id, sender_user_id, message_type, status,
+    content_payload, sent_at, recalled_at, created_at, updated_at
+)
+SELECT 1, 'dm-1001-msg-1', 'seed-client-1', 1, 1, 'TEXT', 'SENT',
+       '你好，今天你在树洞的帖子我看到了。', '2026-04-08 10:05:00', NULL, '2026-04-08 10:05:00', '2026-04-08 10:05:00'
+WHERE NOT EXISTS (
+    SELECT 1
+    FROM dm_messages
+    WHERE id = 1
+);
+
+INSERT INTO dm_messages (
+    id, message_code, client_message_id, conversation_id, sender_user_id, message_type, status,
+    content_payload, sent_at, recalled_at, created_at, updated_at
+)
+SELECT 2, 'dm-1001-msg-2', 'seed-client-2', 1, u.id, 'TEXT', 'SENT',
+       '晚上好，我想和你私信聊一下。', '2026-04-08 10:12:00', NULL, '2026-04-08 10:12:00', '2026-04-08 10:12:00'
+FROM users u
+WHERE u.user_code = 'xiewei'
+  AND NOT EXISTS (
+      SELECT 1
+      FROM dm_messages
+      WHERE id = 2
+  );
 
 INSERT IGNORE INTO messages (id, message_code, conversation_id, sender_type, text_content, display_time, created_at) VALUES
 (1, 'fox-1', 1, 'THEM', '你好！我在树洞看到你发的关于考研资料的帖子，请问数学三的笔记还在吗？', '昨天 18:30', '2026-04-07 18:30:00'),

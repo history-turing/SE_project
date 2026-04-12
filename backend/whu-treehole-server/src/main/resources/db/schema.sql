@@ -487,3 +487,46 @@ CREATE TABLE IF NOT EXISTS dm_conversation_participants (
     updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     UNIQUE KEY uk_dm_participants_conversation_user (conversation_id, user_id)
 );
+
+CREATE TABLE IF NOT EXISTS dm_messages (
+    id BIGINT PRIMARY KEY AUTO_INCREMENT,
+    message_code VARCHAR(64) NOT NULL UNIQUE,
+    client_message_id VARCHAR(64) NULL,
+    conversation_id BIGINT NOT NULL,
+    sender_user_id BIGINT NOT NULL,
+    message_type VARCHAR(16) NOT NULL,
+    status VARCHAR(16) NOT NULL,
+    content_payload TEXT NOT NULL,
+    sent_at DATETIME NOT NULL,
+    recalled_at DATETIME NULL,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    KEY idx_dm_messages_conversation_sent (conversation_id, sent_at, id),
+    KEY idx_dm_messages_sender (sender_user_id),
+    CONSTRAINT fk_dm_messages_conversation FOREIGN KEY (conversation_id) REFERENCES dm_conversations (id),
+    CONSTRAINT fk_dm_messages_sender FOREIGN KEY (sender_user_id) REFERENCES users (id)
+);
+
+CREATE TABLE IF NOT EXISTS dm_user_blocks (
+    id BIGINT PRIMARY KEY AUTO_INCREMENT,
+    user_id BIGINT NOT NULL,
+    blocked_user_id BIGINT NOT NULL,
+    reason VARCHAR(255) NULL,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    UNIQUE KEY uk_dm_user_blocks_pair (user_id, blocked_user_id),
+    CONSTRAINT fk_dm_user_blocks_user FOREIGN KEY (user_id) REFERENCES users (id),
+    CONSTRAINT fk_dm_user_blocks_blocked_user FOREIGN KEY (blocked_user_id) REFERENCES users (id)
+);
+
+CREATE TABLE IF NOT EXISTS dm_conversation_events (
+    id BIGINT PRIMARY KEY AUTO_INCREMENT,
+    conversation_id BIGINT NOT NULL,
+    event_type VARCHAR(32) NOT NULL,
+    operator_user_id BIGINT NULL,
+    payload TEXT NULL,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    KEY idx_dm_conversation_events_conversation (conversation_id, created_at),
+    CONSTRAINT fk_dm_conversation_events_conversation FOREIGN KEY (conversation_id) REFERENCES dm_conversations (id),
+    CONSTRAINT fk_dm_conversation_events_operator FOREIGN KEY (operator_user_id) REFERENCES users (id)
+);

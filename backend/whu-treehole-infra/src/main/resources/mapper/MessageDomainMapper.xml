@@ -1,0 +1,249 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.whu.treehole.infra.mapper.MessageDomainMapper">
+
+    <select id="selectSingleConversationBetweenUsers" resultType="com.whu.treehole.infra.model.DmConversationData">
+        SELECT c.id,
+               c.conversation_code,
+               c.conversation_type,
+               c.status,
+               c.created_by,
+               c.last_message_id,
+               c.last_message_at,
+               c.created_at,
+               c.updated_at
+        FROM dm_conversations c
+        JOIN dm_conversation_participants p1
+          ON p1.conversation_id = c.id
+         AND p1.user_id = #{userId}
+         AND p1.deleted_at IS NULL
+        JOIN dm_conversation_participants p2
+          ON p2.conversation_id = c.id
+         AND p2.user_id = #{peerUserId}
+         AND p2.deleted_at IS NULL
+        WHERE c.conversation_type = 'SINGLE'
+        LIMIT 1
+    </select>
+
+    <insert id="insertConversation" parameterType="com.whu.treehole.infra.model.DmConversationData"
+            useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO dm_conversations (
+            conversation_code,
+            conversation_type,
+            status,
+            created_by,
+            last_message_id,
+            last_message_at,
+            created_at,
+            updated_at
+        ) VALUES (
+            #{conversationCode},
+            #{conversationType},
+            #{status},
+            #{createdBy},
+            #{lastMessageId},
+            #{lastMessageAt},
+            #{createdAt},
+            #{updatedAt}
+        )
+    </insert>
+
+    <insert id="insertConversationParticipant" parameterType="com.whu.treehole.infra.model.DmConversationParticipantData"
+            useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO dm_conversation_participants (
+            conversation_id,
+            user_id,
+            last_read_message_id,
+            last_read_at,
+            unread_count,
+            pinned_flag,
+            muted_flag,
+            cleared_at,
+            deleted_at,
+            created_at,
+            updated_at
+        ) VALUES (
+            #{conversationId},
+            #{userId},
+            #{lastReadMessageId},
+            #{lastReadAt},
+            #{unreadCount},
+            #{pinnedFlag},
+            #{mutedFlag},
+            #{clearedAt},
+            #{deletedAt},
+            #{createdAt},
+            #{updatedAt}
+        )
+    </insert>
+
+    <select id="selectConversationIdByCode" resultType="java.lang.Long">
+        SELECT id
+        FROM dm_conversations
+        WHERE conversation_code = #{conversationCode}
+        LIMIT 1
+    </select>
+
+    <select id="selectConversationList" resultType="com.whu.treehole.infra.model.ConversationData">
+        SELECT c.id,
+               c.conversation_code,
+               peer.name AS peer_name,
+               peer.tagline AS peer_subtitle,
+               peer.avatar_url AS peer_avatar_url,
+               last_message.content_payload AS last_message,
+               DATE_FORMAT(c.last_message_at, '%H:%i') AS display_time,
+               p.unread_count,
+               COALESCE(c.last_message_at, c.created_at) AS sort_time
+        FROM dm_conversation_participants p
+        JOIN dm_conversations c
+          ON c.id = p.conversation_id
+        JOIN dm_conversation_participants peer_p
+          ON peer_p.conversation_id = c.id
+         AND peer_p.user_id <> p.user_id
+         AND peer_p.deleted_at IS NULL
+        JOIN users peer
+          ON peer.id = peer_p.user_id
+        LEFT JOIN dm_messages last_message
+          ON last_message.id = c.last_message_id
+        WHERE p.user_id = #{userId}
+          AND p.deleted_at IS NULL
+        ORDER BY sort_time DESC, c.id DESC
+    </select>
+
+    <select id="selectConversationByCodeAndUserId" resultType="com.whu.treehole.infra.model.DmConversationData">
+        SELECT c.id,
+               c.conversation_code,
+               c.conversation_type,
+               c.status,
+               c.created_by,
+               c.last_message_id,
+               c.last_message_at,
+               c.created_at,
+               c.updated_at
+        FROM dm_conversations c
+        JOIN dm_conversation_participants p
+          ON p.conversation_id = c.id
+         AND p.user_id = #{userId}
+         AND p.deleted_at IS NULL
+        WHERE c.conversation_code = #{conversationCode}
+        LIMIT 1
+    </select>
+
+    <select id="selectConversationParticipant" resultType="com.whu.treehole.infra.model.DmConversationParticipantData">
+        SELECT p.id,
+               p.conversation_id,
+               p.user_id,
+               p.last_read_message_id,
+               p.last_read_at,
+               p.unread_count,
+               p.pinned_flag,
+               p.muted_flag,
+               p.cleared_at,
+               p.deleted_at,
+               p.created_at,
+               p.updated_at
+        FROM dm_conversation_participants p
+        JOIN dm_conversations c
+          ON c.id = p.conversation_id
+        WHERE p.user_id = #{userId}
+          AND p.deleted_at IS NULL
+          AND c.conversation_code = #{conversationCode}
+        LIMIT 1
+    </select>
+
+    <select id="selectConversationPeer" resultType="com.whu.treehole.infra.model.UserProfileData">
+        SELECT peer.id,
+               peer.user_code,
+               peer.name,
+               peer.tagline,
+               peer.college,
+               peer.grade_year,
+               peer.bio,
+               peer.avatar_url
+        FROM dm_conversation_participants self_p
+        JOIN dm_conversations c
+          ON c.id = self_p.conversation_id
+        JOIN dm_conversation_participants peer_p
+          ON peer_p.conversation_id = c.id
+         AND peer_p.user_id <> self_p.user_id
+         AND peer_p.deleted_at IS NULL
+        JOIN users peer
+          ON peer.id = peer_p.user_id
+        WHERE self_p.user_id = #{userId}
+          AND self_p.deleted_at IS NULL
+          AND c.conversation_code = #{conversationCode}
+        LIMIT 1
+    </select>
+
+    <select id="selectConversationMessages" resultType="com.whu.treehole.infra.model.DmMessageData">
+        SELECT m.id,
+               m.message_code,
+               m.client_message_id,
+               m.conversation_id,
+               m.sender_user_id,
+               m.message_type,
+               m.status,
+               m.content_payload,
+               m.sent_at,
+               m.recalled_at,
+               m.created_at,
+               m.updated_at
+        FROM dm_messages m
+        JOIN dm_conversations c
+          ON c.id = m.conversation_id
+        JOIN dm_conversation_participants p
+          ON p.conversation_id = c.id
+         AND p.user_id = #{userId}
+         AND p.deleted_at IS NULL
+        WHERE c.conversation_code = #{conversationCode}
+        ORDER BY m.sent_at ASC, m.id ASC
+    </select>
+
+    <insert id="insertMessage" parameterType="com.whu.treehole.infra.model.DmMessageData"
+            useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO dm_messages (
+            message_code,
+            client_message_id,
+            conversation_id,
+            sender_user_id,
+            message_type,
+            status,
+            content_payload,
+            sent_at,
+            recalled_at,
+            created_at,
+            updated_at
+        ) VALUES (
+            #{messageCode},
+            #{clientMessageId},
+            #{conversationId},
+            #{senderUserId},
+            #{messageType},
+            #{status},
+            #{contentPayload},
+            #{sentAt},
+            #{recalledAt},
+            #{createdAt},
+            #{updatedAt}
+        )
+    </insert>
+
+    <update id="updateConversationAfterSend">
+        UPDATE dm_conversations
+        SET last_message_id = #{lastMessageId},
+            last_message_at = #{lastMessageAt},
+            updated_at = #{lastMessageAt}
+        WHERE id = #{conversationId}
+    </update>
+
+    <update id="increaseUnreadForPeer">
+        UPDATE dm_conversation_participants
+        SET unread_count = unread_count + 1,
+            updated_at = CURRENT_TIMESTAMP
+        WHERE conversation_id = #{conversationId}
+          AND user_id <> #{senderUserId}
+          AND deleted_at IS NULL
+    </update>
+</mapper>
