@@ -130,12 +130,26 @@ export interface ReportCreatePayload {
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? '/api/v1';
 export const AUTH_TOKEN_STORAGE_KEY = 'whu-treehole-token';
+const API_UNKNOWN_ERROR_CODE = -1;
 
 function readStoredToken() {
   if (typeof window === 'undefined') {
     return '';
   }
   return window.localStorage.getItem(AUTH_TOKEN_STORAGE_KEY) ?? '';
+}
+
+function getDefaultErrorMessage(status: number) {
+  if (status === 0) {
+    return '网络异常，请检查连接后重试';
+  }
+  if (status === 502 || status === 503 || status === 504) {
+    return '服务暂时不可用，请稍后再试';
+  }
+  if (status >= 500) {
+    return '服务开小差了，请稍后再试';
+  }
+  return '请求失败，请稍后再试';
 }
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
@@ -149,15 +163,45 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
     headers.set('Authorization', `Bearer ${token}`);
   }
 
-  const response = await fetch(`${API_BASE_URL}${path}`, {
-    ...init,
-    headers,
-  });
+  let response: Response;
+  try {
+    response = await fetch(`${API_BASE_URL}${path}`, {
+      ...init,
+      headers,
+    });
+  } catch {
+    throw new ApiError(getDefaultErrorMessage(0), 0, API_UNKNOWN_ERROR_CODE);
+  }
 
-  const payload = (await response.json()) as ApiEnvelope<T>;
+  const rawBody = await response.text();
+  let payload: ApiEnvelope<T> | null = null;
+
+  if (rawBody.trim()) {
+    try {
+      payload = JSON.parse(rawBody) as ApiEnvelope<T>;
+    } catch {
+      throw new ApiError(
+        response.ok ? '服务响应异常，请稍后再试' : getDefaultErrorMessage(response.status),
+        response.status,
+        API_UNKNOWN_ERROR_CODE,
+      );
+    }
+  }
+
+  if (!payload || typeof payload.code !== 'number') {
+    throw new ApiError(
+      response.ok ? '服务响应异常，请稍后再试' : getDefaultErrorMessage(response.status),
+      response.status,
+      API_UNKNOWN_ERROR_CODE,
+    );
+  }
 
   if (!response.ok || payload.code !== 0) {
-    throw new ApiError(payload.message || '请求失败', response.status, payload.code ?? -1);
+    throw new ApiError(
+      payload.message || getDefaultErrorMessage(response.status),
+      response.status,
+      payload.code ?? API_UNKNOWN_ERROR_CODE,
+    );
   }
 
   return payload.data;
