@@ -16,6 +16,7 @@ vi.mock('../context/AuthContext', () => ({
   useAuthContext: () => ({
     user: {
       id: 7,
+      userCode: 'user-7',
       username: 'xiewei',
       email: 'xiewei@whu.edu.cn',
       name: 'xiewei',

@@ -6,11 +6,13 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 
 import com.whu.treehole.domain.dto.HomePageDto;
+import com.whu.treehole.domain.dto.UserProfileDto;
 import com.whu.treehole.domain.enums.AudienceType;
 import com.whu.treehole.domain.enums.TopicScope;
 import com.whu.treehole.infra.mapper.AuthMapper;
 import com.whu.treehole.infra.mapper.PortalQueryMapper;
 import com.whu.treehole.infra.model.PostData;
+import com.whu.treehole.infra.model.UserProfileData;
 import com.whu.treehole.server.support.PostTimeFormatter;
 import java.time.LocalDateTime;
 import java.util.Collections;
@@ -46,6 +48,7 @@ class PageQueryServiceTest {
         postData.setTitle("标题");
         postData.setContent("内容");
         postData.setAuthorName("作者");
+        postData.setAuthorUserCode("user-9");
         postData.setAuthorHandle("工学部 · 2026");
         postData.setTopicName("校园日常");
         postData.setAudienceType(AudienceType.HOME.code());
@@ -62,5 +65,28 @@ class PageQueryServiceTest {
         HomePageDto homePage = pageQueryService.getHomePage(1L, null, null);
 
         assertEquals("2026-04-11 09:05", homePage.posts().get(0).createdAt());
+        assertEquals("user-9", homePage.posts().get(0).authorUserCode());
+    }
+
+    @Test
+    void shouldLoadPublicProfileByUserCode() {
+        UserProfileData profileData = new UserProfileData();
+        profileData.setId(9L);
+        profileData.setUserCode("user-9");
+        profileData.setName("测试用户");
+        profileData.setTagline("武汉大学");
+        profileData.setCollege("信管");
+        profileData.setGradeYear("2022");
+        profileData.setBio("bio");
+        profileData.setAvatarUrl("avatar");
+
+        when(portalQueryMapper.selectUserProfileByUserCode("user-9")).thenReturn(profileData);
+        when(portalQueryMapper.selectUserBadges(9L)).thenReturn(Collections.emptyList());
+        when(portalQueryMapper.selectUserStats(9L)).thenReturn(Collections.emptyList());
+
+        UserProfileDto profile = pageQueryService.getUserProfileByCode("user-9");
+
+        assertEquals("user-9", profile.userCode());
+        assertEquals("测试用户", profile.name());
     }
 }

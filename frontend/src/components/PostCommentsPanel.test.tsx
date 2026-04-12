@@ -28,6 +28,7 @@ function createRootComment(id: string, content: string) {
     postId: 'home-1',
     parentCommentCode: null,
     author: '测试用户',
+    authorUserCode: 'user-9',
     handle: '信管 · 2022',
     content,
     createdAt: '2026-04-11 10:00',
@@ -121,4 +122,15 @@ test('shows delete for deletable comment and calls delete api', async () => {
   expect(deleteComment).toHaveBeenCalledWith('home-1', 'comment-1');
   expect(screen.queryByText('可删除评论')).not.toBeInTheDocument();
   expect(onCountChange).toHaveBeenCalledWith(0);
+});
+
+test('renders comment author entry to the public user profile', async () => {
+  vi.mocked(getPostComments).mockResolvedValueOnce({
+    total: 1,
+    comments: [createRootComment('comment-1', '带作者入口的评论')],
+  });
+
+  renderWithProviders(<PostCommentsPanel postId="home-1" initialCount={1} onCountChange={vi.fn()} />);
+
+  expect(await screen.findByRole('link', { name: '测试用户' })).toHaveAttribute('href', '/users/user-9');
 });

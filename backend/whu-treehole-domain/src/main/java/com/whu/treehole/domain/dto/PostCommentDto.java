@@ -7,6 +7,7 @@ public record PostCommentDto(
         String postId,
         String parentCommentCode,
         String author,
+        String authorUserCode,
         String handle,
         String content,
         String createdAt,

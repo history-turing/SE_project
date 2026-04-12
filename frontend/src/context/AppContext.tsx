@@ -1,4 +1,4 @@
-﻿import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
+import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
 import {
   alumniContacts as defaultAlumniContacts,
   alumniStories as defaultAlumniStories,
@@ -14,11 +14,12 @@ import {
 import {
   createPost as createPostRequest,
   getAlumniPage,
+  getDmConversationDetail,
+  getDmConversations,
   getHomePage,
   getProfilePage,
   getTopicsPage,
-  markConversationRead,
-  sendMessage as sendMessageRequest,
+  sendDmMessage,
   toggleFollow as toggleFollowRequest,
   toggleLike as toggleLikeRequest,
   toggleSave as toggleSaveRequest,
@@ -27,8 +28,11 @@ import type {
   AlumniContact,
   ComposePayload,
   Conversation,
+  DmConversationDetail,
+  DmConversationSummary,
   FeedPost,
   HomeStats,
+  Message,
   NoticeItem,
   RankingItem,
   StoryCard,
@@ -49,8 +53,10 @@ interface AppStateValue {
   likedIds: string[];
   savedIds: string[];
   followedIds: string[];
-  conversations: Conversation[];
-  activeConversationId: string;
+  conversations: DmConversationSummary[];
+  activeConversationCode: string;
+  activeConversation: DmConversationDetail | null;
+  messagesLoading: boolean;
   profile: UserProfile;
   refreshHomeStats: () => Promise<void>;
   composePost: (payload: ComposePayload) => Promise<boolean>;
@@ -59,7 +65,7 @@ interface AppStateValue {
   removePost: (postId: string) => void;
   setPostCommentCount: (postId: string, count: number) => void;
   toggleFollow: (userId: string) => Promise<void>;
-  selectConversation: (conversationId: string) => Promise<void>;
+  selectConversation: (conversationCode: string) => Promise<void>;
   sendMessage: (text: string) => Promise<void>;
 }
 
@@ -93,6 +99,52 @@ function incrementStat(value: string) {
   return String(Number.isNaN(parsed) ? 1 : parsed + 1);
 }
 
+function toDmSummary(conversation: Conversation): DmConversationSummary {
+  return {
+    conversationCode: conversation.id,
+    peer: {
+      userCode: '',
+      name: conversation.name,
+      subtitle: conversation.subtitle,
+      avatar: conversation.avatar,
+    },
+    lastMessage: conversation.lastMessage,
+    displayTime: conversation.time,
+    unreadCount: conversation.unreadCount,
+  };
+}
+
+function toDmDetail(conversation: Conversation): DmConversationDetail {
+  return {
+    ...toDmSummary(conversation),
+    status: 'ACTIVE',
+    messages: conversation.messages,
+  };
+}
+
+function mergeConversationSummary(
+  current: DmConversationSummary[],
+  nextConversation: DmConversationSummary,
+) {
+  const withoutCurrent = current.filter(
+    (conversation) => conversation.conversationCode !== nextConversation.conversationCode,
+  );
+  return [nextConversation, ...withoutCurrent];
+}
+
+function updateConversationListFromDetail(
+  current: DmConversationSummary[],
+  detail: DmConversationDetail,
+): DmConversationSummary[] {
+  return mergeConversationSummary(current, {
+    conversationCode: detail.conversationCode,
+    peer: detail.peer,
+    lastMessage: detail.lastMessage,
+    displayTime: detail.displayTime,
+    unreadCount: detail.unreadCount,
+  });
+}
+
 export function AppProvider({ children }: { children: ReactNode }) {
   const [communityPosts, setCommunityPosts] = useState(initialCommunityPosts);
   const [alumniPosts, setAlumniPosts] = useState(initialAlumniPosts);
@@ -106,8 +158,16 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [likedIds, setLikedIds] = useState<string[]>([]);
   const [savedIds, setSavedIds] = useState<string[]>([]);
   const [followedIds, setFollowedIds] = useState<string[]>([]);
-  const [conversations, setConversations] = useState(initialConversations);
-  const [activeConversationId, setActiveConversationId] = useState(initialConversations[0]?.id ?? '');
+  const [conversations, setConversations] = useState<DmConversationSummary[]>(
+    initialConversations.map(toDmSummary),
+  );
+  const [activeConversationCode, setActiveConversationCode] = useState(
+    initialConversations[0]?.id ?? '',
+  );
+  const [activeConversation, setActiveConversation] = useState<DmConversationDetail | null>(
+    initialConversations[0] ? toDmDetail(initialConversations[0]) : null,
+  );
+  const [messagesLoading, setMessagesLoading] = useState(false);
   const [profile, setProfile] = useState(defaultProfile);
 
   useEffect(() => {
@@ -115,11 +175,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
     async function bootstrap() {
       try {
-        const [homePage, topicsPage, alumniPage, profilePage] = await Promise.all([
+        const [homePage, topicsPage, alumniPage, profilePage, dmConversations] = await Promise.all([
           getHomePage(),
           getTopicsPage(),
           getAlumniPage(),
           getProfilePage(),
+          getDmConversations().catch(() => []),
         ]);
 
         if (cancelled) {
@@ -152,12 +213,28 @@ export function AppProvider({ children }: { children: ReactNode }) {
         setHomeStats(homePage.stats);
         setAlumniStories(alumniPage.stories);
         setAlumniContacts(alumniPage.contacts);
-        setLikedIds(extractIds(interactionSource, (post) => Boolean((post as FeedPost & { liked?: boolean }).liked)));
-        setSavedIds(extractIds(interactionSource, (post) => Boolean((post as FeedPost & { saved?: boolean }).saved)));
-        setFollowedIds(alumniPage.contacts.filter((contact) => Boolean((contact as AlumniContact & { followed?: boolean }).followed)).map((contact) => contact.id));
-        setConversations(profilePage.conversations);
-        setActiveConversationId(profilePage.activeConversationId);
+        setLikedIds(
+          extractIds(interactionSource, (post) => Boolean((post as FeedPost & { liked?: boolean }).liked)),
+        );
+        setSavedIds(
+          extractIds(interactionSource, (post) => Boolean((post as FeedPost & { saved?: boolean }).saved)),
+        );
+        setFollowedIds(
+          alumniPage.contacts
+            .filter((contact) => Boolean((contact as AlumniContact & { followed?: boolean }).followed))
+            .map((contact) => contact.id),
+        );
         setProfile(profilePage.profile);
+
+        if (dmConversations.length) {
+          const firstConversation = dmConversations[0];
+          setConversations(dmConversations);
+          setActiveConversationCode(firstConversation.conversationCode);
+        } else {
+          setConversations([]);
+          setActiveConversationCode('');
+          setActiveConversation(null);
+        }
       } catch (error) {
         console.error('加载后端数据失败，当前继续使用前端默认数据。', error);
       }
@@ -169,6 +246,46 @@ export function AppProvider({ children }: { children: ReactNode }) {
       cancelled = true;
     };
   }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadConversationDetail() {
+      if (!activeConversationCode) {
+        setActiveConversation(null);
+        return;
+      }
+
+      const fallbackConversation = initialConversations.find(
+        (conversation) => conversation.id === activeConversationCode,
+      );
+
+      setMessagesLoading(true);
+      try {
+        const detail = await getDmConversationDetail(activeConversationCode);
+        if (cancelled) {
+          return;
+        }
+        setActiveConversation(detail);
+        setConversations((current) => updateConversationListFromDetail(current, detail));
+      } catch (error) {
+        console.error('加载私信会话详情失败。', error);
+        if (!cancelled && fallbackConversation) {
+          setActiveConversation(toDmDetail(fallbackConversation));
+        }
+      } finally {
+        if (!cancelled) {
+          setMessagesLoading(false);
+        }
+      }
+    }
+
+    void loadConversationDetail();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [activeConversationCode]);
 
   function updatePostEverywhere(postId: string, updater: (post: FeedPost) => FeedPost) {
     setCommunityPosts((current) => current.map((post) => (post.id === postId ? updater(post) : post)));
@@ -272,44 +389,44 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }
   }
 
-  async function selectConversation(conversationId: string) {
-    setActiveConversationId(conversationId);
+  async function selectConversation(conversationCode: string) {
+    setActiveConversationCode(conversationCode);
     setConversations((current) =>
       current.map((conversation) =>
-        conversation.id === conversationId ? { ...conversation, unreadCount: 0 } : conversation,
+        conversation.conversationCode === conversationCode
+          ? { ...conversation, unreadCount: 0 }
+          : conversation,
       ),
     );
-
-    try {
-      await markConversationRead(conversationId);
-    } catch (error) {
-      console.error('会话已读回写失败。', error);
-    }
   }
 
   async function sendMessage(text: string) {
     const trimmed = text.trim();
-    if (!trimmed || !activeConversationId) {
+    if (!trimmed || !activeConversationCode) {
       return;
     }
 
     try {
-      const message = await sendMessageRequest(activeConversationId, trimmed);
-      setConversations((current) =>
-        current.map((conversation) => {
-          if (conversation.id !== activeConversationId) {
-            return conversation;
-          }
-
-          return {
-            ...conversation,
-            time: message.time,
-            lastMessage: message.text,
-            unreadCount: 0,
-            messages: [...conversation.messages, message],
-          };
-        }),
-      );
+      const message = await sendDmMessage(activeConversationCode, trimmed);
+      const nextMessages: Message[] = [...(activeConversation?.messages ?? []), message];
+      const nextDetail: DmConversationDetail = {
+        conversationCode: activeConversationCode,
+        peer:
+          activeConversation?.peer ??
+          conversations.find((conversation) => conversation.conversationCode === activeConversationCode)?.peer ?? {
+            userCode: '',
+            name: '私信会话',
+            subtitle: '',
+            avatar: '',
+          },
+        status: activeConversation?.status ?? 'ACTIVE',
+        messages: nextMessages,
+        lastMessage: message.text,
+        displayTime: message.time,
+        unreadCount: 0,
+      };
+      setActiveConversation(nextDetail);
+      setConversations((current) => updateConversationListFromDetail(current, nextDetail));
     } catch (error) {
       console.error('发送消息失败。', error);
     }
@@ -331,7 +448,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
         savedIds,
         followedIds,
         conversations,
-        activeConversationId,
+        activeConversationCode,
+        activeConversation,
+        messagesLoading,
         profile,
         refreshHomeStats,
         composePost,

@@ -13,6 +13,7 @@ import { RegisterPage } from './pages/RegisterPage';
 import { SearchPage } from './pages/SearchPage';
 import { TrendingTopicsPage } from './pages/TrendingTopicsPage';
 import { TopicsPage } from './pages/TopicsPage';
+import { UserProfilePage } from './pages/UserProfilePage';
 
 function AuthLoading() {
   return (
@@ -98,6 +99,7 @@ export default function App() {
         <Route path="/announcements" element={<AnnouncementsPage />} />
         <Route path="/alumni" element={<AlumniPage />} />
         <Route path="/profile" element={<ProfilePage />} />
+        <Route path="/users/:userCode" element={<UserProfilePage />} />
         <Route path="/search" element={<SearchPage />} />
         <Route path="/admin" element={<AdminGuard />} />
       </Route>

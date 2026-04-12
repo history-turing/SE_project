@@ -265,6 +265,18 @@ button {
   padding-bottom: 20px;
 }
 
+.conversation-launcher {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.conversation-launcher__hint {
+  color: var(--jade);
+  font-size: 0.92rem;
+}
+
 .site-footer {
   padding: 0 0 110px;
 }
@@ -736,6 +748,11 @@ button {
   gap: 4px;
 }
 
+.post-comment__author-link {
+  color: var(--text);
+  font-weight: 700;
+}
+
 .post-comment p {
   margin: 12px 0;
   line-height: 1.7;
@@ -821,6 +838,23 @@ button {
   color: var(--muted);
 }
 
+.profile-hero--public {
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+
+.profile-hero__aside {
+  display: grid;
+  justify-items: end;
+  align-content: start;
+  gap: 12px;
+}
+
+.profile-hero__tagline {
+  margin: 0;
+  color: var(--muted);
+  text-align: right;
+}
+
 .empty-card {
   text-align: center;
 }
@@ -853,6 +887,17 @@ button {
   text-align: left;
   align-items: flex-start;
   margin-top: 12px;
+}
+
+.conversation-item__avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: var(--rose-soft);
+  color: var(--rose);
+  font-weight: 700;
 }
 
 .conversation-item.is-active {
@@ -900,6 +945,11 @@ button {
   background: linear-gradient(180deg, rgba(255, 255, 255, 0.35), rgba(255, 242, 245, 0.42));
 }
 
+.bubble__content {
+  display: grid;
+  gap: 10px;
+}
+
 .bubble {
   max-width: 72%;
   padding: 16px;
@@ -924,6 +974,11 @@ button {
 .bubble span {
   font-size: 0.8rem;
   opacity: 0.78;
+}
+
+.message-recall-menu {
+  display: flex;
+  justify-content: flex-end;
 }
 .message-compose {
   display: flex;
@@ -1372,6 +1427,13 @@ button {
   padding: 18px;
   display: grid;
   gap: 12px;
+}
+
+.post-card__author-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  color: inherit;
 }
 
 .admin-card__header span {

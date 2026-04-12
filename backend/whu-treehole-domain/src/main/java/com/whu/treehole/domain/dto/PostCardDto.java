@@ -7,6 +7,7 @@ public record PostCardDto(
         String title,
         String content,
         String author,
+        String authorUserCode,
         String handle,
         String topic,
         String audience,

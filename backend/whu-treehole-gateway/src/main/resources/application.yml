@@ -5,6 +5,12 @@ spring:
     nacos:
       discovery:
         server-addr: ${TREEHOLE_NACOS_SERVER_ADDR:localhost:8848}
+  data:
+    redis:
+      host: ${TREEHOLE_REDIS_HOST:localhost}
+      port: ${TREEHOLE_REDIS_PORT:6379}
+      password: ${TREEHOLE_REDIS_PASSWORD:}
+      timeout: 2000ms
 
 management:
   endpoints:

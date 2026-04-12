@@ -5,6 +5,7 @@ import java.util.List;
 /* 个人主页基础资料包含标签和统计信息。 */
 
 public record UserProfileDto(
+        String userCode,
         String name,
         String tagline,
         String college,

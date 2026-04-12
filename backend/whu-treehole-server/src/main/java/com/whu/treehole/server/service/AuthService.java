@@ -187,6 +187,7 @@ public class AuthService {
 
         return new AuthUserDto(
                 profile.getId(),
+                profile.getUserCode(),
                 credential.getUsername(),
                 credential.getEmail(),
                 profile.getName(),

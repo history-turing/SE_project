@@ -13,6 +13,7 @@ export interface FeedPost {
   title?: string;
   content: string;
   author: string;
+  authorUserCode?: string | null;
   handle: string;
   topic: string;
   audience: Audience;
@@ -36,6 +37,7 @@ export interface PostComment {
   postId: string;
   parentCommentCode?: string | null;
   author: string;
+  authorUserCode?: string | null;
   handle: string;
   content: string;
   createdAt: string;
@@ -144,6 +146,7 @@ export interface ProfileStat {
 }
 
 export interface UserProfile {
+  userCode?: string;
   name: string;
   tagline: string;
   college: string;
@@ -168,6 +171,7 @@ export interface Permission {
 
 export interface AuthUser {
   id: number;
+  userCode: string;
   username: string;
   email: string;
   name: string;
@@ -224,6 +228,26 @@ export interface Conversation {
   lastMessage: string;
   time: string;
   unreadCount: number;
+  messages: Message[];
+}
+
+export interface DmConversationPeer {
+  userCode: string;
+  name: string;
+  subtitle: string;
+  avatar: string;
+}
+
+export interface DmConversationSummary {
+  conversationCode: string;
+  peer: DmConversationPeer;
+  lastMessage: string | null;
+  displayTime: string | null;
+  unreadCount: number;
+}
+
+export interface DmConversationDetail extends DmConversationSummary {
+  status: string;
   messages: Message[];
 }
 

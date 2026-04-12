@@ -158,6 +158,15 @@ public class PageQueryService {
         );
     }
 
+    @Cacheable(cacheNames = "userProfile", key = "#userCode")
+    public UserProfileDto getUserProfileByCode(String userCode) {
+        UserProfileData userProfile = portalQueryMapper.selectUserProfileByUserCode(userCode);
+        if (userProfile == null) {
+            throw new BusinessException(4040, "未找到对应用户资料");
+        }
+        return toUserProfile(userProfile);
+    }
+
     @Cacheable(cacheNames = "conversationDetail", key = "#userId + ':' + #conversationCode")
     public ConversationDto getConversation(long userId, String conversationCode) {
         ConversationData conversation = portalQueryMapper.selectConversation(userId, conversationCode);
@@ -252,6 +261,7 @@ public class PageQueryService {
                 .toList();
 
         return new UserProfileDto(
+                userProfileData.getUserCode(),
                 userProfileData.getName(),
                 userProfileData.getTagline(),
                 userProfileData.getCollege(),
@@ -281,6 +291,7 @@ public class PageQueryService {
                 postData.getTitle(),
                 postData.getContent(),
                 postData.getAuthorName(),
+                postData.getAuthorUserCode(),
                 postData.getAuthorHandle(),
                 postData.getTopicName(),
                 audience,

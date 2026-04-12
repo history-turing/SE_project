@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { useAppContext } from '../context/AppContext';
 import { deletePost } from '../services/api';
 import type { FeedPost } from '../types';
@@ -8,6 +9,28 @@ import { ReportDialog } from './ReportDialog';
 
 interface PostCardProps {
   post: FeedPost;
+}
+
+function PostAuthorBlock({ post }: { post: FeedPost }) {
+  const content = (
+    <>
+      <div className="post-card__avatar">{post.author.slice(0, 1)}</div>
+      <div>
+        <p className="post-card__author">{post.author}</p>
+        <p className="post-card__handle">{post.handle}</p>
+      </div>
+    </>
+  );
+
+  if (!post.authorUserCode) {
+    return content;
+  }
+
+  return (
+    <Link className="post-card__author-link" to={`/users/${post.authorUserCode}`}>
+      {content}
+    </Link>
+  );
 }
 
 export function PostCard({ post }: PostCardProps) {
@@ -51,11 +74,7 @@ export function PostCard({ post }: PostCardProps) {
       </div>
 
       <div className="post-card__header">
-        <div className="post-card__avatar">{post.author.slice(0, 1)}</div>
-        <div>
-          <p className="post-card__author">{post.author}</p>
-          <p className="post-card__handle">{post.handle}</p>
-        </div>
+        <PostAuthorBlock post={post} />
       </div>
 
       {post.title ? <h3 className="post-card__title">{post.title}</h3> : null}

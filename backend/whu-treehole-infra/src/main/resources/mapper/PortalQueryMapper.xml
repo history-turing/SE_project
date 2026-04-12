@@ -218,6 +218,7 @@
         p.title,
         p.content,
         p.author_name,
+        author.user_code AS author_user_code,
         p.author_handle,
         p.topic_name,
         p.audience_type,
@@ -271,6 +272,20 @@
         WHERE id = #{userId}
     </select>
 
+    <select id="selectUserProfileByUserCode" resultType="com.whu.treehole.infra.model.UserProfileData">
+        SELECT id,
+               user_code,
+               name,
+               tagline,
+               college,
+               grade_year,
+               bio,
+               avatar_url
+        FROM users
+        WHERE user_code = #{userCode}
+        LIMIT 1
+    </select>
+
     <select id="selectUserBadges" resultType="com.whu.treehole.infra.model.UserBadgeData">
         SELECT badge_name,
                sort_order
@@ -293,6 +308,7 @@
         <include refid="PostProjection"/>
         FROM posts p
                  LEFT JOIN post_interactions i ON i.post_id = p.id AND i.user_id = #{userId}
+                 LEFT JOIN users author ON author.id = p.creator_user_id
         WHERE p.creator_user_id = #{userId}
           AND p.deleted_flag = 0
         ORDER BY p.created_at DESC, p.id DESC
@@ -303,6 +319,7 @@
         <include refid="PostProjection"/>
         FROM posts p
                  INNER JOIN post_interactions i ON i.post_id = p.id
+                 LEFT JOIN users author ON author.id = p.creator_user_id
         WHERE i.user_id = #{userId}
           AND i.saved = 1
           AND p.deleted_flag = 0
@@ -341,6 +358,7 @@
         c.root_comment_id,
         c.reply_to_user_id,
         c.author_name,
+        author.user_code AS author_user_code,
         c.author_handle,
         c.content,
         c.deleted_flag,
@@ -355,6 +373,7 @@
         <include refid="PostCommentProjection"/>
         FROM post_comments c
                  INNER JOIN posts p ON p.id = c.post_id
+                 LEFT JOIN users author ON author.id = c.user_id
         WHERE p.post_code = #{postCode}
           AND c.deleted_flag = 0
         ORDER BY COALESCE(c.root_comment_id, c.id) ASC,
@@ -367,6 +386,7 @@
         SELECT
         <include refid="PostCommentProjection"/>
         FROM post_comments c
+                 LEFT JOIN users author ON author.id = c.user_id
         WHERE c.post_id = #{postId}
           AND c.deleted_flag = 0
         ORDER BY COALESCE(c.root_comment_id, c.id) ASC,
@@ -380,6 +400,7 @@
         <include refid="PostCommentProjection"/>
         FROM post_comments c
                  INNER JOIN posts p ON p.id = c.post_id
+                 LEFT JOIN users author ON author.id = c.user_id
         WHERE p.post_code = #{postCode}
           AND c.comment_code = #{commentCode}
           AND c.deleted_flag = 0
@@ -392,6 +413,7 @@
                p.title,
                p.content,
                p.author_name,
+               author.user_code AS author_user_code,
                p.author_handle,
                p.topic_name,
                p.audience_type,
@@ -409,6 +431,7 @@
                p.deleted_by,
                p.created_at
         FROM posts p
+                 LEFT JOIN users author ON author.id = p.creator_user_id
         WHERE p.post_code = #{postCode}
     </select>
 
@@ -417,6 +440,7 @@
         <include refid="PostCommentProjection"/>
         FROM post_comments c
                  INNER JOIN posts p ON p.id = c.post_id
+                 LEFT JOIN users author ON author.id = c.user_id
         WHERE p.post_code = #{postCode}
           AND c.comment_code = #{commentCode}
     </select>
@@ -426,6 +450,7 @@
         <include refid="PostProjection"/>
         FROM posts p
                  LEFT JOIN post_interactions i ON i.post_id = p.id AND i.user_id = #{userId}
+                 LEFT JOIN users author ON author.id = p.creator_user_id
         WHERE p.deleted_flag = 0
           AND (
               p.title LIKE CONCAT('%', #{keyword}, '%')

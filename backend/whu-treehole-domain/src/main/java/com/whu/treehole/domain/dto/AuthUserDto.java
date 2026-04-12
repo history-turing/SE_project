@@ -7,6 +7,7 @@ import java.util.List;
 
 public record AuthUserDto(
         Long id,
+        String userCode,
         String username,
         String email,
         String name,

@@ -57,6 +57,8 @@ public interface PortalQueryMapper {
 
     UserProfileData selectUserProfile(@Param("userId") Long userId);
 
+    UserProfileData selectUserProfileByUserCode(@Param("userCode") String userCode);
+
     List<UserBadgeData> selectUserBadges(@Param("userId") Long userId);
 
     List<ProfileStatData> selectUserStats(@Param("userId") Long userId);

@@ -13,6 +13,7 @@ public class PostData {
     private String title;
     private String content;
     private String authorName;
+    private String authorUserCode;
     private String authorHandle;
     private String topicName;
     private String audienceType;

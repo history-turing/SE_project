@@ -165,6 +165,7 @@ public class PostCommandService {
                 postData.getTitle(),
                 postData.getContent(),
                 postData.getAuthorName(),
+                postData.getAuthorUserCode(),
                 postData.getAuthorHandle(),
                 postData.getTopicName(),
                 audience,

@@ -10,6 +10,8 @@ import type {
   AuthUser,
   ComposePayload,
   Conversation,
+  DmConversationDetail,
+  DmConversationSummary,
   FeedPost,
   HomeStats,
   NoticeItem,
@@ -30,6 +32,33 @@ interface ApiEnvelope<T> {
   code: number;
   message: string;
   data: T;
+}
+
+interface DmConversationListItemResponse {
+  conversationCode: string;
+  peerName: string;
+  peerSubtitle: string;
+  peerAvatarUrl: string;
+  lastMessage: string | null;
+  displayTime: string | null;
+  unreadCount: number | null;
+}
+
+interface DmConversationPeerResponse {
+  userCode: string;
+  name: string;
+  subtitle: string;
+  avatarUrl: string;
+}
+
+interface DmConversationDetailResponse {
+  conversationCode: string;
+  status: string;
+  peer: DmConversationPeerResponse | null;
+  lastMessage: string | null;
+  lastMessageTime: string | null;
+  unreadCount: number | null;
+  messages: { id: string; sender: 'me' | 'them'; text: string; time: string }[];
 }
 
 export class ApiError extends Error {
@@ -144,6 +173,10 @@ export function getProfilePage() {
   return request<ProfilePageData>('/pages/profile');
 }
 
+export function getUserProfile(userCode: string) {
+  return request<UserProfile>(`/users/${userCode}/profile`);
+}
+
 export function getAnnouncements() {
   return request<AnnouncementSummary[]>('/announcements');
 }
@@ -255,6 +288,60 @@ export function saveTrendingTopicRule(payload: TrendingTopicRulePayload) {
 
 export function getAdminAnnouncements() {
   return request<AnnouncementSummary[]>('/admin/announcements');
+}
+
+export function getDmConversations() {
+  return request<DmConversationListItemResponse[]>('/dm/conversations').then((items) =>
+    items.map((item) => ({
+      conversationCode: item.conversationCode,
+      peer: {
+        userCode: '',
+        name: item.peerName,
+        subtitle: item.peerSubtitle,
+        avatar: item.peerAvatarUrl,
+      },
+      lastMessage: item.lastMessage,
+      displayTime: item.displayTime,
+      unreadCount: item.unreadCount ?? 0,
+    })),
+  );
+}
+
+export function getDmConversationDetail(conversationCode: string) {
+  return request<DmConversationDetailResponse>(`/dm/conversations/${conversationCode}`).then((detail) => ({
+    conversationCode: detail.conversationCode,
+    status: detail.status,
+    peer: {
+      userCode: detail.peer?.userCode ?? '',
+      name: detail.peer?.name ?? '私信会话',
+      subtitle: detail.peer?.subtitle ?? '',
+      avatar: detail.peer?.avatarUrl ?? '',
+    },
+    lastMessage: detail.lastMessage,
+    displayTime: detail.lastMessageTime,
+    unreadCount: detail.unreadCount ?? 0,
+    messages: detail.messages,
+  }));
+}
+
+export function createDirectConversation(peerUserCode: string) {
+  return request<string>('/dm/conversations/direct', {
+    method: 'POST',
+    body: JSON.stringify({ peerUserCode }),
+  }).then((conversationCode) => ({ conversationCode }));
+}
+
+export function sendDmMessage(conversationCode: string, content: string) {
+  return request<{ id: string; sender: 'me' | 'them'; text: string; time: string }>(
+    `/dm/conversations/${conversationCode}/messages`,
+    {
+      method: 'POST',
+      body: JSON.stringify({
+        clientMessageId: `web-${Date.now()}`,
+        content,
+      }),
+    },
+  );
 }
 
 export function createAnnouncement(payload: AnnouncementSavePayload) {

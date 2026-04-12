@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { Link } from 'react-router-dom';
 import {
   createCommentReply,
   createPostComment,
@@ -50,6 +51,18 @@ function removeCommentFromTree(comments: PostComment[], commentId: string) {
 
 function commentReportCode(postId: string, commentId: string) {
   return `${postId}:${commentId}`;
+}
+
+function CommentAuthor({ comment }: { comment: PostComment }) {
+  if (!comment.authorUserCode) {
+    return <strong>{comment.author}</strong>;
+  }
+
+  return (
+    <Link className="post-comment__author-link" to={`/users/${comment.authorUserCode}`}>
+      {comment.author}
+    </Link>
+  );
 }
 
 export function PostCommentsPanel({ postId, initialCount, onCountChange }: PostCommentsPanelProps) {
@@ -246,7 +259,7 @@ export function PostCommentsPanel({ postId, initialCount, onCountChange }: PostC
           <article key={comment.id} className="post-comment">
             <div className="post-comment__header">
               <div>
-                <strong>{comment.author}</strong>
+                <CommentAuthor comment={comment} />
                 <span>{comment.handle}</span>
               </div>
               <small>{comment.createdAt}</small>
@@ -310,7 +323,7 @@ export function PostCommentsPanel({ postId, initialCount, onCountChange }: PostC
                   <article key={reply.id} className="post-comment post-comment--reply">
                     <div className="post-comment__header">
                       <div>
-                        <strong>{reply.author}</strong>
+                        <CommentAuthor comment={reply} />
                         <span>{reply.handle}</span>
                       </div>
                       <small>{reply.createdAt}</small>

@@ -67,6 +67,11 @@ public class PageController {
         return ApiResponse.success(pageQueryService.getProfilePage(AuthContextHolder.currentUserId(), conversationCode));
     }
 
+    @GetMapping("/users/{userCode}/profile")
+    public ApiResponse<com.whu.treehole.domain.dto.UserProfileDto> getUserProfile(@PathVariable String userCode) {
+        return ApiResponse.success(pageQueryService.getUserProfileByCode(userCode));
+    }
+
     @GetMapping("/announcements")
     public ApiResponse<List<AnnouncementSummaryDto>> getAnnouncements() {
         return ApiResponse.success(announcementService.listPublishedAnnouncements());

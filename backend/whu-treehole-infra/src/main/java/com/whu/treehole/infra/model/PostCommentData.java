@@ -13,6 +13,7 @@ public class PostCommentData {
     private Long rootCommentId;
     private Long replyToUserId;
     private String authorName;
+    private String authorUserCode;
     private String authorHandle;
     private String content;
     private Boolean deletedFlag;
