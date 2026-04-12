@@ -95,6 +95,195 @@ WHERE u.user_code = 'xiewei'
          OR uc.email = 'xiewei@whu.edu.cn'
   );
 
+-- Stable test accounts for remote acceptance and RBAC verification.
+INSERT INTO users (user_code, name, tagline, college, grade_year, bio, avatar_url, created_at)
+SELECT 'user-codex-super',
+       'codex-super',
+       '用于超级管理员验收的稳定测试账号。',
+       '测试账号',
+       '系统种子',
+       '保留用于超级管理员权限、公告投放与全局治理验收。',
+       'https://example.com/avatar/codex-super.jpg',
+       '2026-04-13 09:00:00'
+WHERE NOT EXISTS (
+    SELECT 1
+    FROM users u
+    WHERE u.user_code = 'user-codex-super'
+)
+  AND NOT EXISTS (
+    SELECT 1
+    FROM user_credentials uc
+    WHERE uc.username = 'codex-super'
+       OR uc.email = 'codex-super@whu.edu.cn'
+  );
+
+INSERT INTO users (user_code, name, tagline, college, grade_year, bio, avatar_url, created_at)
+SELECT 'user-codex-user',
+       'codex-user',
+       '用于普通用户验收的稳定测试账号。',
+       '测试账号',
+       '系统种子',
+       '保留用于普通发帖、评论、举报和私信流程验收。',
+       'https://example.com/avatar/codex-user.jpg',
+       '2026-04-13 09:00:00'
+WHERE NOT EXISTS (
+    SELECT 1
+    FROM users u
+    WHERE u.user_code = 'user-codex-user'
+)
+  AND NOT EXISTS (
+    SELECT 1
+    FROM user_credentials uc
+    WHERE uc.username = 'codex-user'
+       OR uc.email = 'codex-user@whu.edu.cn'
+  );
+
+INSERT INTO users (user_code, name, tagline, college, grade_year, bio, avatar_url, created_at)
+SELECT 'user-codex-promote',
+       'codex-promote',
+       '用于角色提升验收的稳定测试账号。',
+       '测试账号',
+       '系统种子',
+       '保留用于从普通用户提拔为管理员、再回收权限的验收。',
+       'https://example.com/avatar/codex-promote.jpg',
+       '2026-04-13 09:00:00'
+WHERE NOT EXISTS (
+    SELECT 1
+    FROM users u
+    WHERE u.user_code = 'user-codex-promote'
+)
+  AND NOT EXISTS (
+    SELECT 1
+    FROM user_credentials uc
+    WHERE uc.username = 'codex-promote'
+       OR uc.email = 'codex-promote@whu.edu.cn'
+  );
+
+INSERT INTO user_credentials (
+    user_id,
+    email,
+    username,
+    password_hash,
+    email_verified_at,
+    last_login_at,
+    created_at,
+    updated_at
+)
+SELECT u.id,
+       'codex-super@whu.edu.cn',
+       'codex-super',
+       '$2a$10$F6NFYwJ4okPAS4BcNi5eYOB2ZZtCYgr4XBdpA3Ov3XQ5Q21ihChZK',
+       '2026-04-13 09:00:00',
+       '2026-04-13 09:00:00',
+       '2026-04-13 09:00:00',
+       '2026-04-13 09:00:00'
+FROM users u
+WHERE u.user_code = 'user-codex-super'
+  AND NOT EXISTS (
+      SELECT 1
+      FROM user_credentials uc
+      WHERE uc.username = 'codex-super'
+         OR uc.email = 'codex-super@whu.edu.cn'
+  );
+
+INSERT INTO user_credentials (
+    user_id,
+    email,
+    username,
+    password_hash,
+    email_verified_at,
+    last_login_at,
+    created_at,
+    updated_at
+)
+SELECT u.id,
+       'codex-user@whu.edu.cn',
+       'codex-user',
+       '$2a$10$F6NFYwJ4okPAS4BcNi5eYOB2ZZtCYgr4XBdpA3Ov3XQ5Q21ihChZK',
+       '2026-04-13 09:00:00',
+       '2026-04-13 09:00:00',
+       '2026-04-13 09:00:00',
+       '2026-04-13 09:00:00'
+FROM users u
+WHERE u.user_code = 'user-codex-user'
+  AND NOT EXISTS (
+      SELECT 1
+      FROM user_credentials uc
+      WHERE uc.username = 'codex-user'
+         OR uc.email = 'codex-user@whu.edu.cn'
+  );
+
+INSERT INTO user_credentials (
+    user_id,
+    email,
+    username,
+    password_hash,
+    email_verified_at,
+    last_login_at,
+    created_at,
+    updated_at
+)
+SELECT u.id,
+       'codex-promote@whu.edu.cn',
+       'codex-promote',
+       '$2a$10$F6NFYwJ4okPAS4BcNi5eYOB2ZZtCYgr4XBdpA3Ov3XQ5Q21ihChZK',
+       '2026-04-13 09:00:00',
+       '2026-04-13 09:00:00',
+       '2026-04-13 09:00:00',
+       '2026-04-13 09:00:00'
+FROM users u
+WHERE u.user_code = 'user-codex-promote'
+  AND NOT EXISTS (
+      SELECT 1
+      FROM user_credentials uc
+      WHERE uc.username = 'codex-promote'
+         OR uc.email = 'codex-promote@whu.edu.cn'
+  );
+
+INSERT INTO user_badges (user_id, badge_name, sort_order)
+SELECT u.id, '测试账号', 1
+FROM users u
+WHERE u.user_code IN ('user-codex-super', 'user-codex-user', 'user-codex-promote')
+  AND NOT EXISTS (
+      SELECT 1
+      FROM user_badges ub
+      WHERE ub.user_id = u.id
+        AND ub.badge_name = '测试账号'
+  );
+
+INSERT INTO user_profile_stats (user_id, stat_label, stat_value, sort_order)
+SELECT u.id, '已发树洞', '0', 1
+FROM users u
+WHERE u.user_code IN ('user-codex-super', 'user-codex-user', 'user-codex-promote')
+  AND NOT EXISTS (
+      SELECT 1
+      FROM user_profile_stats ups
+      WHERE ups.user_id = u.id
+        AND ups.stat_label = '已发树洞'
+  );
+
+INSERT INTO user_profile_stats (user_id, stat_label, stat_value, sort_order)
+SELECT u.id, '收藏内容', '0', 2
+FROM users u
+WHERE u.user_code IN ('user-codex-super', 'user-codex-user', 'user-codex-promote')
+  AND NOT EXISTS (
+      SELECT 1
+      FROM user_profile_stats ups
+      WHERE ups.user_id = u.id
+        AND ups.stat_label = '收藏内容'
+  );
+
+INSERT INTO user_profile_stats (user_id, stat_label, stat_value, sort_order)
+SELECT u.id, '已建立私信', '0', 3
+FROM users u
+WHERE u.user_code IN ('user-codex-super', 'user-codex-user', 'user-codex-promote')
+  AND NOT EXISTS (
+      SELECT 1
+      FROM user_profile_stats ups
+      WHERE ups.user_id = u.id
+        AND ups.stat_label = '已建立私信'
+  );
+
 INSERT IGNORE INTO topics (id, topic_code, name, description, heat_text, destination_type, accent_tone, emoji, sort_order) VALUES
 (1, 'confession', '表白墙', '把没说出口的话，放进珞珈山的风里。', '1.2k 正在热议', 'CAMPUS', 'rose', '💗', 1),
 (2, 'lost-found', '失物招领', '连接遗落的时光，帮物品重新找到主人。', '450+ 待认领', 'CAMPUS', 'jade', '🔎', 2),
@@ -296,6 +485,12 @@ SELECT uc.user_id, r.id, uc.user_id
 FROM user_credentials uc
          INNER JOIN roles r ON r.code = 'SUPER_ADMIN'
 WHERE uc.username = 'xiewei';
+
+INSERT IGNORE INTO user_roles (user_id, role_id, created_by)
+SELECT uc.user_id, r.id, uc.user_id
+FROM user_credentials uc
+         INNER JOIN roles r ON r.code = 'SUPER_ADMIN'
+WHERE uc.username = 'codex-super';
 
 UPDATE users
 SET account_status = 'ACTIVE'
