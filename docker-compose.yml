@@ -45,8 +45,8 @@ services:
     restart: unless-stopped
     environment:
       TZ: Asia/Shanghai
-      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USERNAME:?RABBITMQ_USERNAME is required}
-      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD:?RABBITMQ_PASSWORD is required}
+      RABBITMQ_DEFAULT_USER: ${TREEHOLE_RABBITMQ_USERNAME:-treehole}
+      RABBITMQ_DEFAULT_PASS: ${TREEHOLE_RABBITMQ_PASSWORD:?TREEHOLE_RABBITMQ_PASSWORD is required}
     ports:
       - "127.0.0.1:${RABBITMQ_MANAGEMENT_PORT:-15672}:15672"
     healthcheck:
