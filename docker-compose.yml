@@ -182,9 +182,14 @@ services:
       start_period: 40s
     environment:
       TZ: Asia/Shanghai
+      TREEHOLE_REDIS_HOST: redis
+      TREEHOLE_REDIS_PORT: 6379
+      TREEHOLE_REDIS_PASSWORD: ${REDIS_PASSWORD:?REDIS_PASSWORD is required}
       TREEHOLE_NACOS_SERVER_ADDR: ${TREEHOLE_NACOS_SERVER_ADDR:-nacos:8848}
       TREEHOLE_GATEWAY_PORT: ${TREEHOLE_GATEWAY_PORT:-8080}
     depends_on:
+      redis:
+        condition: service_healthy
       nacos:
         condition: service_healthy
       backend:

@@ -92,7 +92,14 @@
                peer.name AS peer_name,
                peer.tagline AS peer_subtitle,
                peer.avatar_url AS peer_avatar_url,
-               last_message.content_payload AS last_message,
+               CASE
+                   WHEN last_message.status = 'REVOKED' THEN
+                       CASE
+                           WHEN last_message.sender_user_id = p.user_id THEN '你撤回了一条消息'
+                           ELSE '对方撤回了一条消息'
+                       END
+                   ELSE last_message.content_payload
+               END AS last_message,
                DATE_FORMAT(c.last_message_at, '%H:%i') AS display_time,
                p.unread_count,
                COALESCE(c.last_message_at, c.created_at) AS sort_time
@@ -201,6 +208,41 @@
         ORDER BY m.sent_at ASC, m.id ASC
     </select>
 
+    <select id="selectMessageByCode" resultType="com.whu.treehole.infra.model.DmMessageData">
+        SELECT m.id,
+               m.message_code,
+               m.client_message_id,
+               m.conversation_id,
+               m.sender_user_id,
+               m.message_type,
+               m.status,
+               m.content_payload,
+               m.sent_at,
+               m.recalled_at,
+               m.created_at,
+               m.updated_at
+        FROM dm_messages m
+        JOIN dm_conversations c
+          ON c.id = m.conversation_id
+        JOIN dm_conversation_participants p
+          ON p.conversation_id = c.id
+         AND p.user_id = #{userId}
+         AND p.deleted_at IS NULL
+        WHERE c.conversation_code = #{conversationCode}
+          AND m.message_code = #{messageCode}
+        LIMIT 1
+    </select>
+
+    <select id="selectConversationParticipantUserIds" resultType="java.lang.Long">
+        SELECT user_id
+        FROM dm_conversation_participants p
+        JOIN dm_conversations c
+          ON c.id = p.conversation_id
+        WHERE c.conversation_code = #{conversationCode}
+          AND p.deleted_at IS NULL
+        ORDER BY user_id ASC
+    </select>
+
     <insert id="insertMessage" parameterType="com.whu.treehole.infra.model.DmMessageData"
             useGeneratedKeys="true" keyProperty="id">
         INSERT INTO dm_messages (
@@ -230,6 +272,14 @@
         )
     </insert>
 
+    <update id="recallMessage">
+        UPDATE dm_messages
+        SET status = #{status},
+            recalled_at = #{recalledAt},
+            updated_at = #{recalledAt}
+        WHERE id = #{messageId}
+    </update>
+
     <update id="updateConversationAfterSend">
         UPDATE dm_conversations
         SET last_message_id = #{lastMessageId},
@@ -245,5 +295,18 @@
         WHERE conversation_id = #{conversationId}
           AND user_id &lt;&gt; #{senderUserId}
           AND deleted_at IS NULL
+    </update>
+
+    <update id="markConversationRead">
+        UPDATE dm_conversation_participants p
+        JOIN dm_conversations c
+          ON c.id = p.conversation_id
+        SET p.unread_count = 0,
+            p.last_read_message_id = #{lastReadMessageId},
+            p.last_read_at = #{lastReadAt},
+            p.updated_at = #{lastReadAt}
+        WHERE p.user_id = #{userId}
+          AND p.deleted_at IS NULL
+          AND c.conversation_code = #{conversationCode}
     </update>
 </mapper>

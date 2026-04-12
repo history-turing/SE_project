@@ -24,6 +24,7 @@ export function ProfilePage() {
     messagesLoading,
     myPosts,
     profile,
+    recallMessage,
     savedIds,
     selectConversation,
     sendMessage,
@@ -93,7 +94,7 @@ export function ProfilePage() {
             <p className="eyebrow">个人主页</p>
             <h1>{profile.name}</h1>
             <p className="profile-hero__meta">
-              {profile.college} · {profile.year}
+              {profile.college} 路 {profile.year}
             </p>
             <p className="hero__description">{profile.bio}</p>
             <div className="tag-row">
@@ -233,9 +234,9 @@ export function ProfilePage() {
                       <div className="bubble__content">
                         <p>{message.text}</p>
                         <MessageRecallMenu
-                          visible={message.sender === 'me'}
+                          visible={Boolean(message.canRecall)}
                           onRecall={() => {
-                            console.info('消息撤回入口已预留，后续将接入正式撤回 API。', message.id);
+                            void recallMessage(message.id);
                           }}
                         />
                       </div>

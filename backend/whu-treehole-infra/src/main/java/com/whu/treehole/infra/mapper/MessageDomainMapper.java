@@ -34,7 +34,17 @@ public interface MessageDomainMapper {
     List<DmMessageData> selectConversationMessages(@Param("userId") Long userId,
                                                    @Param("conversationCode") String conversationCode);
 
+    DmMessageData selectMessageByCode(@Param("userId") Long userId,
+                                      @Param("conversationCode") String conversationCode,
+                                      @Param("messageCode") String messageCode);
+
+    List<Long> selectConversationParticipantUserIds(@Param("conversationCode") String conversationCode);
+
     void insertMessage(DmMessageData messageData);
+
+    void recallMessage(@Param("messageId") Long messageId,
+                       @Param("status") com.whu.treehole.domain.enums.MessageStatus status,
+                       @Param("recalledAt") LocalDateTime recalledAt);
 
     void updateConversationAfterSend(@Param("conversationId") Long conversationId,
                                      @Param("lastMessageId") Long lastMessageId,
@@ -42,4 +52,9 @@ public interface MessageDomainMapper {
 
     void increaseUnreadForPeer(@Param("conversationId") Long conversationId,
                                @Param("senderUserId") Long senderUserId);
+
+    void markConversationRead(@Param("userId") Long userId,
+                              @Param("conversationCode") String conversationCode,
+                              @Param("lastReadMessageId") Long lastReadMessageId,
+                              @Param("lastReadAt") LocalDateTime lastReadAt);
 }

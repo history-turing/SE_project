@@ -72,4 +72,18 @@ public class MessageConversationController {
                                                @Valid @RequestBody MessageSendRequest request) {
         return ApiResponse.success(messageCommandService.sendMessage(userId, conversationCode, request));
     }
+
+    @PostMapping("/{conversationCode}/messages/{messageCode}/recall")
+    public ApiResponse<MessageDto> recallMessage(@RequestHeader("X-User-Id") long userId,
+                                                 @PathVariable String conversationCode,
+                                                 @PathVariable String messageCode) {
+        return ApiResponse.success(messageCommandService.recallMessage(userId, conversationCode, messageCode));
+    }
+
+    @PostMapping("/{conversationCode}/read")
+    public ApiResponse<Void> markConversationRead(@RequestHeader("X-User-Id") long userId,
+                                                  @PathVariable String conversationCode) {
+        conversationCommandService.markConversationRead(userId, conversationCode);
+        return ApiResponse.success(null);
+    }
 }

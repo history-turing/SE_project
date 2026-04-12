@@ -218,6 +218,11 @@ export interface Message {
   sender: 'me' | 'them';
   text: string;
   time: string;
+  messageType?: string;
+  status?: string;
+  recalled?: boolean;
+  recalledAt?: string | null;
+  canRecall?: boolean;
 }
 
 export interface Conversation {

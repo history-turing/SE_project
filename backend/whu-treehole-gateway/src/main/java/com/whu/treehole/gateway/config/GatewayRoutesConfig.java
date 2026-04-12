@@ -26,7 +26,7 @@ public class GatewayRoutesConfig {
                         .path("/api/v1/dm/**")
                         .uri("lb://whu-treehole-message-service"))
                 .route(MESSAGE_SERVICE_WS_ROUTE, route -> route
-                        .path("/ws/messages/**")
+                        .path("/ws/messages", "/ws/messages/**")
                         .uri("lb:ws://whu-treehole-message-service"))
                 .build();
     }

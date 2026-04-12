@@ -32,6 +32,11 @@ public class MessageServiceConfig {
     }
 
     @Bean
+    Binding messageRecalledBinding(Queue messageCreatedQueue, TopicExchange dmExchange) {
+        return BindingBuilder.bind(messageCreatedQueue).to(dmExchange).with("message.recalled");
+    }
+
+    @Bean
     MessageConverter jacksonMessageConverter() {
         return new Jackson2JsonMessageConverter();
     }

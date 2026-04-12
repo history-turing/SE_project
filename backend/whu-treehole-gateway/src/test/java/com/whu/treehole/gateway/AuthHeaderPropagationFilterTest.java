@@ -60,4 +60,26 @@ class AuthHeaderPropagationFilterTest {
 
         assertEquals(HttpStatus.UNAUTHORIZED, exchange.getResponse().getStatusCode());
     }
+
+    @Test
+    void shouldInjectUserHeaderForWebSocketHandshakeUsingQueryToken() {
+        StringRedisTemplate redisTemplate = mock(StringRedisTemplate.class);
+        @SuppressWarnings("unchecked")
+        ValueOperations<String, String> valueOperations = mock(ValueOperations.class);
+        when(redisTemplate.opsForValue()).thenReturn(valueOperations);
+        when(valueOperations.get("auth:session:ws-token")).thenReturn("7");
+
+        AuthHeaderPropagationFilter filter = new AuthHeaderPropagationFilter(redisTemplate);
+        MockServerWebExchange exchange = MockServerWebExchange.from(
+                MockServerHttpRequest.get("/ws/messages?token=ws-token").build());
+
+        GatewayFilterChain chain = nextExchange -> {
+            assertEquals("7", nextExchange.getRequest().getHeaders().getFirst("X-User-Id"));
+            return Mono.empty();
+        };
+
+        filter.filter(exchange, chain).block();
+
+        verify(valueOperations).get("auth:session:ws-token");
+    }
 }

@@ -1,6 +1,19 @@
 package com.whu.treehole.domain.dto;
 
-/* 单条消息保持与前端消息气泡结构一致。 */
+/* Shared message view model for legacy conversation pages and the new DM service. */
+public record MessageDto(
+        String id,
+        String sender,
+        String text,
+        String time,
+        String messageType,
+        String status,
+        boolean recalled,
+        String recalledAt,
+        boolean canRecall
+) {
 
-public record MessageDto(String id, String sender, String text, String time) {
+    public MessageDto(String id, String sender, String text, String time) {
+        this(id, sender, text, time, "TEXT", "SENT", false, null, false);
+    }
 }

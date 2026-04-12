@@ -58,7 +58,17 @@ interface DmConversationDetailResponse {
   lastMessage: string | null;
   lastMessageTime: string | null;
   unreadCount: number | null;
-  messages: { id: string; sender: 'me' | 'them'; text: string; time: string }[];
+  messages: {
+    id: string;
+    sender: 'me' | 'them';
+    text: string;
+    time: string;
+    messageType?: string;
+    status?: string;
+    recalled?: boolean;
+    recalledAt?: string | null;
+    canRecall?: boolean;
+  }[];
 }
 
 export class ApiError extends Error {
@@ -332,7 +342,17 @@ export function createDirectConversation(peerUserCode: string) {
 }
 
 export function sendDmMessage(conversationCode: string, content: string) {
-  return request<{ id: string; sender: 'me' | 'them'; text: string; time: string }>(
+  return request<{
+    id: string;
+    sender: 'me' | 'them';
+    text: string;
+    time: string;
+    messageType?: string;
+    status?: string;
+    recalled?: boolean;
+    recalledAt?: string | null;
+    canRecall?: boolean;
+  }>(
     `/dm/conversations/${conversationCode}/messages`,
     {
       method: 'POST',
@@ -342,6 +362,28 @@ export function sendDmMessage(conversationCode: string, content: string) {
       }),
     },
   );
+}
+
+export function recallDmMessage(conversationCode: string, messageId: string) {
+  return request<{
+    id: string;
+    sender: 'me' | 'them';
+    text: string;
+    time: string;
+    messageType?: string;
+    status?: string;
+    recalled?: boolean;
+    recalledAt?: string | null;
+    canRecall?: boolean;
+  }>(`/dm/conversations/${conversationCode}/messages/${messageId}/recall`, {
+    method: 'POST',
+  });
+}
+
+export function markDmConversationRead(conversationCode: string) {
+  return request<null>(`/dm/conversations/${conversationCode}/read`, {
+    method: 'POST',
+  });
 }
 
 export function createAnnouncement(payload: AnnouncementSavePayload) {

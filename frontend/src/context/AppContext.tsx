@@ -19,6 +19,8 @@ import {
   getHomePage,
   getProfilePage,
   getTopicsPage,
+  markDmConversationRead,
+  recallDmMessage,
   sendDmMessage,
   toggleFollow as toggleFollowRequest,
   toggleLike as toggleLikeRequest,
@@ -67,6 +69,7 @@ interface AppStateValue {
   toggleFollow: (userId: string) => Promise<void>;
   selectConversation: (conversationCode: string) => Promise<void>;
   sendMessage: (text: string) => Promise<void>;
+  recallMessage: (messageId: string) => Promise<void>;
 }
 
 const AppContext = createContext<AppStateValue | null>(null);
@@ -266,8 +269,20 @@ export function AppProvider({ children }: { children: ReactNode }) {
         if (cancelled) {
           return;
         }
-        setActiveConversation(detail);
-        setConversations((current) => updateConversationListFromDetail(current, detail));
+        const normalizedDetail =
+          detail.unreadCount > 0
+            ? {
+                ...detail,
+                unreadCount: 0,
+              }
+            : detail;
+        setActiveConversation(normalizedDetail);
+        setConversations((current) => updateConversationListFromDetail(current, normalizedDetail));
+        if (detail.unreadCount > 0) {
+          void markDmConversationRead(activeConversationCode).catch((error) => {
+            console.error('标记私信已读失败。', error);
+          });
+        }
       } catch (error) {
         console.error('加载私信会话详情失败。', error);
         if (!cancelled && fallbackConversation) {
@@ -432,6 +447,35 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }
   }
 
+  async function recallMessage(messageId: string) {
+    if (!activeConversationCode) {
+      return;
+    }
+
+    try {
+      const recalledMessage = await recallDmMessage(activeConversationCode, messageId);
+      const currentDetail = activeConversation;
+      if (!currentDetail || currentDetail.conversationCode !== activeConversationCode) {
+        return;
+      }
+
+      const nextMessages: Message[] = currentDetail.messages.map((message) =>
+        message.id === messageId ? { ...message, ...recalledMessage } : message,
+      );
+      const lastMessage = nextMessages[nextMessages.length - 1];
+      const nextDetail: DmConversationDetail = {
+        ...currentDetail,
+        messages: nextMessages,
+        lastMessage: lastMessage?.text ?? currentDetail.lastMessage,
+        displayTime: lastMessage?.time ?? currentDetail.displayTime,
+      };
+      setActiveConversation(nextDetail);
+      setConversations((current) => updateConversationListFromDetail(current, nextDetail));
+    } catch (error) {
+      console.error('撤回私信失败。', error);
+    }
+  }
+
   return (
     <AppContext.Provider
       value={{
@@ -461,6 +505,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         toggleFollow,
         selectConversation,
         sendMessage,
+        recallMessage,
       }}
     >
       {children}

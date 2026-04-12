@@ -35,3 +35,7 @@ management:
 
 server:
   port: ${TREEHOLE_MESSAGE_PORT:8081}
+
+treehole:
+  messaging:
+    recall-window-seconds: ${TREEHOLE_DM_RECALL_WINDOW_SECONDS:120}

@@ -1,20 +1,21 @@
 package com.whu.treehole.message.service;
 
 import com.whu.treehole.common.exception.BusinessException;
-import com.whu.treehole.domain.dto.MessageEventDto;
 import com.whu.treehole.domain.dto.MessageDto;
+import com.whu.treehole.domain.dto.MessageEventDto;
 import com.whu.treehole.domain.dto.MessageSendRequest;
 import com.whu.treehole.domain.enums.MessageStatus;
 import com.whu.treehole.domain.enums.MessageType;
 import com.whu.treehole.infra.mapper.MessageDomainMapper;
 import com.whu.treehole.infra.model.DmConversationParticipantData;
 import com.whu.treehole.infra.model.DmMessageData;
-import com.whu.treehole.infra.model.UserProfileData;
 import java.time.Clock;
+import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -26,22 +27,32 @@ public class MessageCommandService {
     private final MessageDomainMapper messageDomainMapper;
     private final Clock clock;
     private final MessageEventPublisher messageEventPublisher;
+    private final Duration recallWindow;
 
     MessageCommandService(MessageDomainMapper messageDomainMapper) {
-        this(messageDomainMapper, Clock.systemDefaultZone(), null);
+        this(messageDomainMapper, Clock.systemDefaultZone(), null, Duration.ofMinutes(2));
     }
 
     MessageCommandService(MessageDomainMapper messageDomainMapper, Clock clock) {
-        this(messageDomainMapper, clock, null);
+        this(messageDomainMapper, clock, null, Duration.ofMinutes(2));
     }
 
     @Autowired
     public MessageCommandService(MessageDomainMapper messageDomainMapper,
                                  Clock clock,
-                                 MessageEventPublisher messageEventPublisher) {
+                                 MessageEventPublisher messageEventPublisher,
+                                 @Value("${treehole.messaging.recall-window-seconds:120}") long recallWindowSeconds) {
+        this(messageDomainMapper, clock, messageEventPublisher, Duration.ofSeconds(Math.max(30L, recallWindowSeconds)));
+    }
+
+    MessageCommandService(MessageDomainMapper messageDomainMapper,
+                          Clock clock,
+                          MessageEventPublisher messageEventPublisher,
+                          Duration recallWindow) {
         this.messageDomainMapper = messageDomainMapper;
         this.clock = clock;
         this.messageEventPublisher = messageEventPublisher;
+        this.recallWindow = recallWindow;
     }
 
     @Transactional
@@ -81,30 +92,83 @@ public class MessageCommandService {
         messageDomainMapper.insertMessage(messageData);
         messageDomainMapper.updateConversationAfterSend(conversationId, messageData.getId(), now);
         messageDomainMapper.increaseUnreadForPeer(conversationId, operatorUserId);
-        publishCreatedEvent(operatorUserId, conversationCode, messageData.getMessageCode());
+        publishEvent("message.created", conversationCode, messageData.getMessageCode());
 
-        return new MessageDto(
-                messageData.getMessageCode(),
-                "me",
-                trimmedContent,
-                now.format(MESSAGE_TIME_FORMATTER)
-        );
+        return toMessageDto(operatorUserId, messageData);
     }
 
-    private void publishCreatedEvent(long operatorUserId, String conversationCode, String messageCode) {
+    @Transactional
+    public MessageDto recallMessage(long operatorUserId, String conversationCode, String messageCode) {
+        DmConversationParticipantData participantData =
+                messageDomainMapper.selectConversationParticipant(operatorUserId, conversationCode);
+        if (participantData == null) {
+            throw new BusinessException(4042, "会话不存在");
+        }
+
+        DmMessageData messageData = messageDomainMapper.selectMessageByCode(operatorUserId, conversationCode, messageCode);
+        if (messageData == null) {
+            throw new BusinessException(4044, "消息不存在");
+        }
+        if (messageData.getSenderUserId() == null || messageData.getSenderUserId() != operatorUserId) {
+            throw new BusinessException(4003, "仅支持撤回自己发送的消息");
+        }
+        if (messageData.getStatus() == MessageStatus.REVOKED) {
+            return toMessageDto(operatorUserId, messageData);
+        }
+
+        LocalDateTime now = LocalDateTime.now(clock);
+        if (messageData.getSentAt() == null || Duration.between(messageData.getSentAt(), now).compareTo(recallWindow) > 0) {
+            throw new BusinessException(4004, "消息已超过可撤回时限");
+        }
+
+        messageData.setStatus(MessageStatus.REVOKED);
+        messageData.setRecalledAt(now);
+        messageData.setUpdatedAt(now);
+        messageDomainMapper.recallMessage(messageData.getId(), MessageStatus.REVOKED, now);
+        publishEvent("message.recalled", conversationCode, messageCode);
+        return toMessageDto(operatorUserId, messageData);
+    }
+
+    private void publishEvent(String type, String conversationCode, String messageCode) {
         if (messageEventPublisher == null) {
             return;
         }
-        UserProfileData peerData = messageDomainMapper.selectConversationPeer(operatorUserId, conversationCode);
-        if (peerData == null || peerData.getId() == null) {
+        List<Long> targetUserIds = messageDomainMapper.selectConversationParticipantUserIds(conversationCode);
+        if (targetUserIds == null || targetUserIds.isEmpty()) {
             return;
         }
         messageEventPublisher.publish(new MessageEventDto(
-                "message.created",
+                type,
                 conversationCode,
                 messageCode,
-                operatorUserId,
-                List.of(peerData.getId())
+                null,
+                targetUserIds
         ));
+    }
+
+    private MessageDto toMessageDto(long operatorUserId, DmMessageData data) {
+        String sender = data.getSenderUserId() != null && data.getSenderUserId() == operatorUserId ? "me" : "them";
+        boolean recalled = data.getStatus() == MessageStatus.REVOKED;
+        String text;
+        if (recalled) {
+            text = "me".equals(sender) ? "你撤回了一条消息" : "对方撤回了一条消息";
+        } else {
+            text = data.getContentPayload();
+        }
+        boolean canRecall = "me".equals(sender)
+                && !recalled
+                && data.getSentAt() != null
+                && Duration.between(data.getSentAt(), LocalDateTime.now(clock)).compareTo(recallWindow) <= 0;
+        return new MessageDto(
+                data.getMessageCode(),
+                sender,
+                text,
+                data.getSentAt() == null ? null : data.getSentAt().format(MESSAGE_TIME_FORMATTER),
+                data.getMessageType() == null ? MessageType.TEXT.name() : data.getMessageType().name(),
+                data.getStatus() == null ? MessageStatus.SENT.name() : data.getStatus().name(),
+                recalled,
+                data.getRecalledAt() == null ? null : data.getRecalledAt().toString(),
+                canRecall
+        );
     }
 }

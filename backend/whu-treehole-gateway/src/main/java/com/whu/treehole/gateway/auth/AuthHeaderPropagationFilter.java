@@ -16,6 +16,7 @@ public class AuthHeaderPropagationFilter implements GlobalFilter, Ordered {
     private static final String USER_ID_HEADER = "X-User-Id";
     private static final String BEARER_PREFIX = "Bearer ";
     private static final String SESSION_KEY_PREFIX = "auth:session:";
+    private static final String WS_TOKEN_PARAM = "token";
 
     private final StringRedisTemplate stringRedisTemplate;
 
@@ -30,7 +31,7 @@ public class AuthHeaderPropagationFilter implements GlobalFilter, Ordered {
             return chain.filter(exchange);
         }
 
-        String token = extractBearerToken(exchange.getRequest().getHeaders().getFirst(HttpHeaders.AUTHORIZATION));
+        String token = resolveToken(exchange);
         if (token == null) {
             exchange.getResponse().setStatusCode(HttpStatus.UNAUTHORIZED);
             return exchange.getResponse().setComplete();
@@ -54,7 +55,7 @@ public class AuthHeaderPropagationFilter implements GlobalFilter, Ordered {
     }
 
     private boolean requiresUserPropagation(String path) {
-        return path.startsWith("/api/v1/dm/") || path.startsWith("/ws/messages/");
+        return path.startsWith("/api/v1/dm/") || "/ws/messages".equals(path) || path.startsWith("/ws/messages/");
     }
 
     private String extractBearerToken(String authorization) {
@@ -63,5 +64,17 @@ public class AuthHeaderPropagationFilter implements GlobalFilter, Ordered {
         }
         String token = authorization.substring(BEARER_PREFIX.length()).trim();
         return token.isEmpty() ? null : token;
+    }
+
+    private String resolveToken(ServerWebExchange exchange) {
+        String bearerToken = extractBearerToken(exchange.getRequest().getHeaders().getFirst(HttpHeaders.AUTHORIZATION));
+        if (bearerToken != null) {
+            return bearerToken;
+        }
+        String queryToken = exchange.getRequest().getQueryParams().getFirst(WS_TOKEN_PARAM);
+        if (queryToken == null || queryToken.isBlank()) {
+            return null;
+        }
+        return queryToken.trim();
     }
 }

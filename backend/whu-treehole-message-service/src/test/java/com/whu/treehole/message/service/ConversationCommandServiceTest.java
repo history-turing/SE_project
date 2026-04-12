@@ -11,9 +11,14 @@ import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import com.whu.treehole.domain.dto.DirectConversationRequest;
+import com.whu.treehole.domain.enums.ConversationStatus;
 import com.whu.treehole.infra.mapper.MessageDomainMapper;
 import com.whu.treehole.infra.model.DmConversationData;
 import com.whu.treehole.infra.model.DmConversationParticipantData;
+import java.time.Clock;
+import java.time.Instant;
+import java.time.ZoneId;
+import java.time.LocalDateTime;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
@@ -75,5 +80,29 @@ class ConversationCommandServiceTest {
         verify(messageDomainMapper, times(2)).insertConversationParticipant(participantCaptor.capture());
         assertEquals(18L, participantCaptor.getAllValues().get(0).getConversationId());
         assertEquals(18L, participantCaptor.getAllValues().get(1).getConversationId());
+    }
+
+    @Test
+    void shouldMarkConversationReadAndPersistLastReadMessage() {
+        DmConversationData conversationData = new DmConversationData();
+        conversationData.setConversationCode("dm-1001");
+        conversationData.setStatus(ConversationStatus.ACTIVE);
+        conversationData.setLastMessageId(205L);
+        when(messageDomainMapper.selectConversationByCodeAndUserId(7L, "dm-1001")).thenReturn(conversationData);
+
+        DmConversationParticipantData participantData = new DmConversationParticipantData();
+        participantData.setUnreadCount(3);
+        when(messageDomainMapper.selectConversationParticipant(7L, "dm-1001")).thenReturn(participantData);
+
+        Clock fixedClock = Clock.fixed(Instant.parse("2026-04-12T13:45:00Z"), ZoneId.of("Asia/Shanghai"));
+        ConversationCommandService service = new ConversationCommandService(messageDomainMapper, fixedClock);
+
+        service.markConversationRead(7L, "dm-1001");
+
+        verify(messageDomainMapper).markConversationRead(
+                7L,
+                "dm-1001",
+                205L,
+                LocalDateTime.of(2026, 4, 12, 21, 45));
     }
 }
