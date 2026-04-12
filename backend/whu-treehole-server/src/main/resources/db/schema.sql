@@ -459,3 +459,31 @@ CREATE TABLE IF NOT EXISTS role_permissions (
     CONSTRAINT fk_role_permissions_permission FOREIGN KEY (permission_id) REFERENCES permissions (id),
     CONSTRAINT fk_role_permissions_created_by FOREIGN KEY (created_by) REFERENCES users (id)
 );
+
+CREATE TABLE IF NOT EXISTS dm_conversations (
+    id BIGINT PRIMARY KEY AUTO_INCREMENT,
+    conversation_code VARCHAR(64) NOT NULL UNIQUE,
+    conversation_type VARCHAR(16) NOT NULL,
+    status VARCHAR(16) NOT NULL,
+    created_by BIGINT NOT NULL,
+    last_message_id BIGINT NULL,
+    last_message_at DATETIME NULL,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS dm_conversation_participants (
+    id BIGINT PRIMARY KEY AUTO_INCREMENT,
+    conversation_id BIGINT NOT NULL,
+    user_id BIGINT NOT NULL,
+    last_read_message_id BIGINT NULL,
+    last_read_at DATETIME NULL,
+    unread_count INT NOT NULL DEFAULT 0,
+    pinned_flag TINYINT(1) NOT NULL DEFAULT 0,
+    muted_flag TINYINT(1) NOT NULL DEFAULT 0,
+    cleared_at DATETIME NULL,
+    deleted_at DATETIME NULL,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    UNIQUE KEY uk_dm_participants_conversation_user (conversation_id, user_id)
+);
