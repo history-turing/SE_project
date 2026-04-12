@@ -1,10 +1,9 @@
 package com.whu.treehole.server.service;
 
-/* 页面查询服务负责组合 Mapper 数据并输出前端可直接消费的页面模型。 */
-
 import com.whu.treehole.common.exception.BusinessException;
 import com.whu.treehole.domain.dto.AlumniContactDto;
 import com.whu.treehole.domain.dto.AlumniPageDto;
+import com.whu.treehole.domain.dto.AnnouncementSummaryDto;
 import com.whu.treehole.domain.dto.ConversationDto;
 import com.whu.treehole.domain.dto.HomePageDto;
 import com.whu.treehole.domain.dto.HomeStatsDto;
@@ -27,14 +26,16 @@ import com.whu.treehole.infra.model.MessageData;
 import com.whu.treehole.infra.model.NoticeData;
 import com.whu.treehole.infra.model.PostData;
 import com.whu.treehole.infra.model.ProfileStatData;
-import com.whu.treehole.infra.model.RankingData;
 import com.whu.treehole.infra.model.StoryData;
 import com.whu.treehole.infra.model.TopicData;
+import com.whu.treehole.infra.model.TopicRealtimeStatData;
 import com.whu.treehole.infra.model.TopicTagData;
 import com.whu.treehole.infra.model.UserBadgeData;
 import com.whu.treehole.infra.model.UserProfileData;
-import com.whu.treehole.server.service.AuthorizationService;
 import com.whu.treehole.server.support.PostTimeFormatter;
+import java.time.Clock;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedHashMap;
@@ -51,33 +52,58 @@ public class PageQueryService {
     private final PortalQueryMapper portalQueryMapper;
     private final PostTimeFormatter postTimeFormatter;
     private final AuthorizationService authorizationService;
+    private final TrendingTopicService trendingTopicService;
+    private final AnnouncementService announcementService;
+    private final Clock clock;
 
     public PageQueryService(PortalQueryMapper portalQueryMapper,
                             PostTimeFormatter postTimeFormatter,
-                            AuthorizationService authorizationService) {
+                            AuthorizationService authorizationService,
+                            TrendingTopicService trendingTopicService,
+                            AnnouncementService announcementService,
+                            Clock clock) {
         this.portalQueryMapper = portalQueryMapper;
         this.postTimeFormatter = postTimeFormatter;
         this.authorizationService = authorizationService;
+        this.trendingTopicService = trendingTopicService;
+        this.announcementService = announcementService;
+        this.clock = clock;
+    }
+
+    PageQueryService(PortalQueryMapper portalQueryMapper,
+                     PostTimeFormatter postTimeFormatter,
+                     AuthorizationService authorizationService) {
+        this(
+                portalQueryMapper,
+                postTimeFormatter,
+                authorizationService,
+                new TrendingTopicService(portalQueryMapper, Clock.system(ZoneId.of("Asia/Shanghai"))),
+                new AnnouncementService(portalQueryMapper, null, authorizationService, null, Clock.system(ZoneId.of("Asia/Shanghai"))),
+                Clock.system(ZoneId.of("Asia/Shanghai"))
+        );
     }
 
     @Cacheable(cacheNames = "homePage", key = "#userId + ':' + (#topic == null ? '' : #topic) + ':' + (#keyword == null ? '' : #keyword)")
     public HomePageDto getHomePage(long userId, String topic, String keyword) {
         List<TopicData> campusTopics = portalQueryMapper.selectTopics(TopicScope.CAMPUS.name());
         Map<String, List<String>> topicTags = buildTopicTagMap(TopicScope.CAMPUS.name());
+        Map<String, TopicRealtimeStatData> topicStats = buildTopicStatMap(TopicScope.CAMPUS.name());
         List<PostCardDto> posts = toPostCards(
                 portalQueryMapper.selectPosts(AudienceType.HOME.code(), normalize(topic), normalize(keyword), userId),
                 userId);
+        List<RankingItemDto> rankings = trendingTopicService.listHomeRankings();
+        List<AnnouncementSummaryDto> announcements = announcementService.listHomeAnnouncements();
 
         HomeStatsDto stats = new HomeStatsDto(
                 String.valueOf(defaultInt(portalQueryMapper.countTodayPostsByAudience(AudienceType.HOME.code()))),
-                String.valueOf(defaultInt(portalQueryMapper.countTopics())),
+                String.valueOf(rankings.size()),
                 String.valueOf(defaultInt(portalQueryMapper.countTodayPostsByAudience(AudienceType.ALUMNI.code()))));
 
         return new HomePageDto(
                 stats,
-                campusTopics.stream().limit(4).map(topicData -> toTopicCard(topicData, topicTags)).toList(),
-                portalQueryMapper.selectRankings().stream().map(this::toRankingItem).toList(),
-                portalQueryMapper.selectNotices().stream().map(this::toNoticeItem).toList(),
+                campusTopics.stream().limit(4).map(topicData -> toTopicCard(topicData, topicTags, topicStats)).toList(),
+                rankings,
+                announcements.stream().map(this::toNoticeItem).toList(),
                 posts
         );
     }
@@ -91,9 +117,10 @@ public class PageQueryService {
         };
         List<TopicData> topics = portalQueryMapper.selectTopics(mapperScope);
         Map<String, List<String>> topicTags = buildTopicTagMap(mapperScope);
+        Map<String, TopicRealtimeStatData> topicStats = buildTopicStatMap(mapperScope);
         return new TopicsPageDto(
-                topics.stream().map(topicData -> toTopicCard(topicData, topicTags)).toList(),
-                portalQueryMapper.selectRankings().stream().map(this::toRankingItem).toList()
+                topics.stream().map(topicData -> toTopicCard(topicData, topicTags, topicStats)).toList(),
+                trendingTopicService.listAllRankings()
         );
     }
 
@@ -160,15 +187,29 @@ public class PageQueryService {
                 ));
     }
 
-    private TopicCardDto toTopicCard(TopicData topicData, Map<String, List<String>> topicTags) {
+    private Map<String, TopicRealtimeStatData> buildTopicStatMap(String scope) {
+        LocalDateTime now = LocalDateTime.now(clock);
+        return portalQueryMapper.selectTopicRealtimeStats(scope, now.minusHours(24), now.toLocalDate().atStartOfDay()).stream()
+                .collect(Collectors.toMap(
+                        TopicRealtimeStatData::getTopicCode,
+                        data -> data,
+                        (left, right) -> left,
+                        LinkedHashMap::new
+                ));
+    }
+
+    private TopicCardDto toTopicCard(TopicData topicData,
+                                     Map<String, List<String>> topicTags,
+                                     Map<String, TopicRealtimeStatData> topicStats) {
         String destination = TopicScope.ALUMNI.name().equals(topicData.getDestinationType())
                 ? AudienceType.ALUMNI.destination()
                 : AudienceType.HOME.destination();
+        TopicRealtimeStatData statData = topicStats.get(topicData.getTopicCode());
         return new TopicCardDto(
                 topicData.getTopicCode(),
                 topicData.getName(),
                 topicData.getDescription(),
-                topicData.getHeatText(),
+                buildTopicHeat(statData),
                 destination,
                 topicData.getAccentTone(),
                 topicTags.getOrDefault(topicData.getTopicCode(), Collections.emptyList()),
@@ -176,12 +217,13 @@ public class PageQueryService {
         );
     }
 
-    private RankingItemDto toRankingItem(RankingData rankingData) {
-        return new RankingItemDto(rankingData.getRankingCode(), rankingData.getLabel(), rankingData.getHeatText());
-    }
-
     private NoticeItemDto toNoticeItem(NoticeData noticeData) {
         return new NoticeItemDto(noticeData.getNoticeCode(), noticeData.getTitle(), noticeData.getMeta());
+    }
+
+    private NoticeItemDto toNoticeItem(AnnouncementSummaryDto announcement) {
+        String meta = announcement.pinned() ? "置顶公告" : announcement.category();
+        return new NoticeItemDto(announcement.code(), announcement.title(), meta);
     }
 
     private StoryCardDto toStoryCard(StoryData storyData) {
@@ -300,5 +342,20 @@ public class PageQueryService {
 
     private String normalize(String value) {
         return value == null || value.isBlank() ? null : value.trim();
+    }
+
+    private String buildTopicHeat(TopicRealtimeStatData statData) {
+        if (statData == null) {
+            return "今天还没有新帖";
+        }
+        int todayPosts = defaultInt(statData.getTodayPostCount());
+        int interactionCount = defaultInt(statData.getInteractionCount24h());
+        if (todayPosts > 0) {
+            return "今日 " + todayPosts + " 条新帖 · 24h " + interactionCount + " 次互动";
+        }
+        if (defaultInt(statData.getTotalPostCount()) > 0) {
+            return "今天还没有新帖 · 累计 " + statData.getTotalPostCount() + " 条";
+        }
+        return "今天还没有新帖";
     }
 }

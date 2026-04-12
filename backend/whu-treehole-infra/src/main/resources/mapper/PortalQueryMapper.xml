@@ -55,6 +55,162 @@
         ORDER BY sort_order ASC, id ASC
     </select>
 
+    <select id="selectTopicRealtimeStats" resultType="com.whu.treehole.infra.model.TopicRealtimeStatData">
+        SELECT t.topic_code,
+               t.name AS topic_name,
+               COALESCE(SUM(CASE WHEN p.created_at &gt;= #{todayStart} THEN 1 ELSE 0 END), 0) AS today_post_count,
+               COALESCE(SUM(CASE WHEN p.created_at &gt;= #{since24h} THEN p.like_count + p.comment_count + p.save_count ELSE 0 END), 0) AS interaction_count24h,
+               COALESCE(COUNT(p.id), 0) AS total_post_count
+        FROM topics t
+                 LEFT JOIN posts p
+                           ON p.topic_name = t.name
+                               AND p.deleted_flag = 0
+                               AND (
+                                   (t.destination_type = 'CAMPUS' AND p.audience_type = 'HOME')
+                                       OR (t.destination_type = 'ALUMNI' AND p.audience_type = 'ALUMNI')
+                                   )
+        <where>
+            <if test="scope != null">
+                t.destination_type = #{scope}
+            </if>
+        </where>
+        GROUP BY t.topic_code, t.name, t.sort_order, t.id
+        ORDER BY t.sort_order ASC, t.id ASC
+    </select>
+
+    <select id="selectRecentPostsForTrending" resultType="com.whu.treehole.infra.model.PostData">
+        SELECT id,
+               post_code,
+               creator_user_id,
+               title,
+               content,
+               author_name,
+               author_handle,
+               topic_name,
+               audience_type,
+               display_time,
+               like_count,
+               comment_count,
+               save_count,
+               accent_tone,
+               badge,
+               image_url,
+               anonymous_flag,
+               location,
+               created_at
+        FROM posts
+        WHERE deleted_flag = 0
+          AND created_at &gt;= #{since}
+        ORDER BY created_at DESC, id DESC
+    </select>
+
+    <select id="selectTrendingTopicRules" resultType="com.whu.treehole.infra.model.TrendingTopicRuleData">
+        SELECT id,
+               topic_key,
+               display_name,
+               merge_target_key,
+               hidden_flag,
+               pinned_flag,
+               sort_order,
+               updated_by,
+               updated_at
+        FROM trending_topic_rules
+        ORDER BY pinned_flag DESC, sort_order ASC, id ASC
+    </select>
+
+    <select id="selectActiveAnnouncements" resultType="com.whu.treehole.infra.model.AnnouncementData">
+        SELECT id,
+               announcement_code,
+               title,
+               summary,
+               content,
+               category,
+               status,
+               pinned_flag,
+               popup_flag,
+               popup_once_per_session,
+               published_at,
+               expire_at,
+               created_by,
+               updated_by,
+               created_at,
+               updated_at
+        FROM announcements
+        WHERE status = 'PUBLISHED'
+          AND (published_at IS NULL OR published_at &lt;= #{now})
+          AND (expire_at IS NULL OR expire_at &gt; #{now})
+        ORDER BY pinned_flag DESC, published_at DESC, id DESC
+    </select>
+
+    <select id="selectActivePopupAnnouncement" resultType="com.whu.treehole.infra.model.AnnouncementData">
+        SELECT id,
+               announcement_code,
+               title,
+               summary,
+               content,
+               category,
+               status,
+               pinned_flag,
+               popup_flag,
+               popup_once_per_session,
+               published_at,
+               expire_at,
+               created_by,
+               updated_by,
+               created_at,
+               updated_at
+        FROM announcements
+        WHERE status = 'PUBLISHED'
+          AND popup_flag = 1
+          AND (published_at IS NULL OR published_at &lt;= #{now})
+          AND (expire_at IS NULL OR expire_at &gt; #{now})
+        ORDER BY pinned_flag DESC, published_at DESC, id DESC
+        LIMIT 1
+    </select>
+
+    <select id="selectAdminAnnouncements" resultType="com.whu.treehole.infra.model.AnnouncementData">
+        SELECT id,
+               announcement_code,
+               title,
+               summary,
+               content,
+               category,
+               status,
+               pinned_flag,
+               popup_flag,
+               popup_once_per_session,
+               published_at,
+               expire_at,
+               created_by,
+               updated_by,
+               created_at,
+               updated_at
+        FROM announcements
+        ORDER BY updated_at DESC, id DESC
+    </select>
+
+    <select id="selectAnnouncementByCode" resultType="com.whu.treehole.infra.model.AnnouncementData">
+        SELECT id,
+               announcement_code,
+               title,
+               summary,
+               content,
+               category,
+               status,
+               pinned_flag,
+               popup_flag,
+               popup_once_per_session,
+               published_at,
+               expire_at,
+               created_by,
+               updated_by,
+               created_at,
+               updated_at
+        FROM announcements
+        WHERE announcement_code = #{announcementCode}
+        LIMIT 1
+    </select>
+
     <sql id="PostProjection">
         p.id,
         p.post_code,

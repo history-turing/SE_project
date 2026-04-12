@@ -199,7 +199,14 @@ INSERT IGNORE INTO permissions (code, name, description, module) VALUES
 ('user.unban', 'Unban User', 'Unban target user', 'USER'),
 ('role.read.any', 'Read Roles', 'Read role data', 'ROLE'),
 ('role.assign.admin', 'Assign Admin Role', 'Assign admin role', 'ROLE'),
-('role.revoke.admin', 'Revoke Admin Role', 'Revoke admin role', 'ROLE');
+('role.revoke.admin', 'Revoke Admin Role', 'Revoke admin role', 'ROLE'),
+('trending.read.any', 'Read Trending Topics', 'Read trending topic candidates', 'TRENDING'),
+('trending.hide', 'Hide Trending Topic', 'Hide abnormal trending topic', 'TRENDING'),
+('trending.curate', 'Curate Trending Topic', 'Pin, merge or rename trending topic', 'TRENDING'),
+('announcement.read.any', 'Read Announcements', 'Read announcement management data', 'ANNOUNCEMENT'),
+('announcement.create', 'Create Announcement', 'Create or edit announcements', 'ANNOUNCEMENT'),
+('announcement.publish', 'Publish Announcement', 'Publish or offline announcements', 'ANNOUNCEMENT'),
+('announcement.popup.manage', 'Manage Popup Announcement', 'Manage popup or pinned announcements', 'ANNOUNCEMENT');
 
 INSERT IGNORE INTO role_permissions (role_id, permission_id, created_by)
 SELECT r.id, p.id, NULL
@@ -235,7 +242,12 @@ FROM roles r
     'report.resolve',
     'audit.read.moderation',
     'user.ban',
-    'user.unban'
+    'user.unban',
+    'trending.read.any',
+    'trending.hide',
+    'announcement.read.any',
+    'announcement.create',
+    'announcement.publish'
 )
 WHERE r.code = 'ADMIN';
 
@@ -263,7 +275,14 @@ FROM roles r
     'user.unban',
     'role.read.any',
     'role.assign.admin',
-    'role.revoke.admin'
+    'role.revoke.admin',
+    'trending.read.any',
+    'trending.hide',
+    'trending.curate',
+    'announcement.read.any',
+    'announcement.create',
+    'announcement.publish',
+    'announcement.popup.manage'
 )
 WHERE r.code = 'SUPER_ADMIN';
 

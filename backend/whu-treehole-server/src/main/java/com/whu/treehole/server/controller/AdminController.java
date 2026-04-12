@@ -3,18 +3,25 @@ package com.whu.treehole.server.controller;
 import com.whu.treehole.common.api.ApiResponse;
 import com.whu.treehole.domain.dto.AuditLogDto;
 import com.whu.treehole.domain.dto.AdminUserDto;
+import com.whu.treehole.domain.dto.AnnouncementSummaryDto;
+import com.whu.treehole.domain.dto.AnnouncementSaveRequest;
 import com.whu.treehole.domain.dto.ReportResolveRequest;
 import com.whu.treehole.domain.dto.ReportSummaryDto;
 import com.whu.treehole.domain.dto.RoleAssignmentRequest;
 import com.whu.treehole.domain.dto.RoleDto;
+import com.whu.treehole.domain.dto.TrendingTopicAdminDto;
+import com.whu.treehole.domain.dto.TrendingTopicRuleRequest;
 import com.whu.treehole.domain.dto.UserBanRequest;
+import com.whu.treehole.server.service.AnnouncementService;
 import com.whu.treehole.server.service.ModerationService;
+import com.whu.treehole.server.service.TrendingTopicService;
 import com.whu.treehole.server.support.AuthContextHolder;
 import jakarta.validation.Valid;
 import java.util.List;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -24,9 +31,15 @@ import org.springframework.web.bind.annotation.RestController;
 public class AdminController {
 
     private final ModerationService moderationService;
+    private final TrendingTopicService trendingTopicService;
+    private final AnnouncementService announcementService;
 
-    public AdminController(ModerationService moderationService) {
+    public AdminController(ModerationService moderationService,
+                           TrendingTopicService trendingTopicService,
+                           AnnouncementService announcementService) {
         this.moderationService = moderationService;
+        this.trendingTopicService = trendingTopicService;
+        this.announcementService = announcementService;
     }
 
     @PostMapping("/users/{userCode}/roles")
@@ -85,5 +98,47 @@ public class AdminController {
     @GetMapping("/roles")
     public ApiResponse<List<RoleDto>> listRoles() {
         return ApiResponse.success(moderationService.listRoles(AuthContextHolder.currentUserId()));
+    }
+
+    @GetMapping("/trending-topics")
+    public ApiResponse<List<TrendingTopicAdminDto>> listTrendingTopics() {
+        return ApiResponse.success(trendingTopicService.listAdminTopics(AuthContextHolder.currentUserId()));
+    }
+
+    @PostMapping("/trending-topics/rules")
+    public ApiResponse<Void> saveTrendingTopicRule(@Valid @RequestBody TrendingTopicRuleRequest request) {
+        trendingTopicService.saveRule(AuthContextHolder.currentUserId(), request);
+        return ApiResponse.success(null);
+    }
+
+    @GetMapping("/announcements")
+    public ApiResponse<List<AnnouncementSummaryDto>> listAnnouncements() {
+        return ApiResponse.success(announcementService.listAdminAnnouncements(AuthContextHolder.currentUserId()));
+    }
+
+    @PostMapping("/announcements")
+    public ApiResponse<AnnouncementSummaryDto> createAnnouncement(@Valid @RequestBody AnnouncementSaveRequest request) {
+        return ApiResponse.success(announcementService.createAnnouncement(AuthContextHolder.currentUserId(), request));
+    }
+
+    @PutMapping("/announcements/{announcementCode}")
+    public ApiResponse<AnnouncementSummaryDto> updateAnnouncement(@PathVariable String announcementCode,
+                                                                  @Valid @RequestBody AnnouncementSaveRequest request) {
+        return ApiResponse.success(announcementService.updateAnnouncement(
+                AuthContextHolder.currentUserId(),
+                announcementCode,
+                request));
+    }
+
+    @PostMapping("/announcements/{announcementCode}/publish")
+    public ApiResponse<Void> publishAnnouncement(@PathVariable String announcementCode) {
+        announcementService.publishAnnouncement(AuthContextHolder.currentUserId(), announcementCode);
+        return ApiResponse.success(null);
+    }
+
+    @PostMapping("/announcements/{announcementCode}/offline")
+    public ApiResponse<Void> offlineAnnouncement(@PathVariable String announcementCode) {
+        announcementService.offlineAnnouncement(AuthContextHolder.currentUserId(), announcementCode);
+        return ApiResponse.success(null);
     }
 }

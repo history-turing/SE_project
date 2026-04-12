@@ -1,5 +1,5 @@
 ﻿import { useMemo, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useAppContext } from '../context/AppContext';
 
 const scopes = ['全部', '校园话题', '校友话题'];
@@ -77,7 +77,9 @@ export function TopicsPage() {
       <section className="surface-card">
         <div className="section-head">
           <h2>热门话题排行</h2>
-          <span className="eyebrow">实时更新</span>
+          <Link className="secondary-button secondary-button--compact" to="/topics/trending">
+            查看完整热榜
+          </Link>
         </div>
         <div className="ranking-grid">
           {topicRankings.map((item, index) => (

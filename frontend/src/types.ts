@@ -79,6 +79,42 @@ export interface NoticeItem {
   meta: string;
 }
 
+export interface AnnouncementSummary {
+  code: string;
+  title: string;
+  summary: string;
+  category: string;
+  pinned: boolean;
+  popupEnabled: boolean;
+  popupOncePerSession: boolean;
+  status: string;
+  publishedAt: string;
+  expireAt: string;
+}
+
+export interface AnnouncementDetail extends AnnouncementSummary {
+  content: string;
+}
+
+export interface AnnouncementPopup {
+  code: string;
+  title: string;
+  content: string;
+  popupOncePerSession: boolean;
+}
+
+export interface AnnouncementSavePayload {
+  title: string;
+  summary: string;
+  content: string;
+  category: string;
+  pinned: boolean;
+  popupEnabled: boolean;
+  popupOncePerSession: boolean;
+  publishedAt?: string | null;
+  expireAt?: string | null;
+}
+
 export interface AlumniContact {
   id: string;
   name: string;
@@ -197,4 +233,26 @@ export interface ComposePayload {
   topic: string;
   audience: Audience;
   anonymous: boolean;
+}
+
+export interface TrendingTopicAdmin {
+  topicKey: string;
+  displayName: string;
+  mergeTargetKey: string | null;
+  hidden: boolean;
+  pinned: boolean;
+  sortOrder: number;
+  postCount: number;
+  interactionCount: number;
+  uniqueAuthorCount: number;
+  score: number;
+}
+
+export interface TrendingTopicRulePayload {
+  topicKey: string;
+  displayName?: string;
+  mergeTargetKey?: string;
+  hidden?: boolean;
+  pinned?: boolean;
+  sortOrder?: number;
 }

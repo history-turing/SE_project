@@ -6,6 +6,7 @@ import com.whu.treehole.infra.model.ContactData;
 import com.whu.treehole.infra.model.ConversationData;
 import com.whu.treehole.infra.model.MessageData;
 import com.whu.treehole.infra.model.NoticeData;
+import com.whu.treehole.infra.model.AnnouncementData;
 import com.whu.treehole.infra.model.PostCommentData;
 import com.whu.treehole.infra.model.PostData;
 import com.whu.treehole.infra.model.ProfileStatData;
@@ -13,10 +14,13 @@ import com.whu.treehole.infra.model.RankingData;
 import com.whu.treehole.infra.model.ReportData;
 import com.whu.treehole.infra.model.StoryData;
 import com.whu.treehole.infra.model.TopicData;
+import com.whu.treehole.infra.model.TopicRealtimeStatData;
 import com.whu.treehole.infra.model.TopicTagData;
+import com.whu.treehole.infra.model.TrendingTopicRuleData;
 import com.whu.treehole.infra.model.UserBadgeData;
 import com.whu.treehole.infra.model.UserProfileData;
 import com.whu.treehole.infra.model.AuditLogData;
+import java.time.LocalDateTime;
 import java.util.List;
 import org.apache.ibatis.annotations.Param;
 
@@ -29,6 +33,22 @@ public interface PortalQueryMapper {
     List<RankingData> selectRankings();
 
     List<NoticeData> selectNotices();
+
+    List<TopicRealtimeStatData> selectTopicRealtimeStats(@Param("scope") String scope,
+                                                         @Param("since24h") LocalDateTime since24h,
+                                                         @Param("todayStart") LocalDateTime todayStart);
+
+    List<PostData> selectRecentPostsForTrending(@Param("since") LocalDateTime since);
+
+    List<TrendingTopicRuleData> selectTrendingTopicRules();
+
+    List<AnnouncementData> selectActiveAnnouncements(@Param("now") LocalDateTime now);
+
+    AnnouncementData selectActivePopupAnnouncement(@Param("now") LocalDateTime now);
+
+    List<AnnouncementData> selectAdminAnnouncements();
+
+    AnnouncementData selectAnnouncementByCode(@Param("announcementCode") String announcementCode);
 
     List<PostData> selectPosts(@Param("audience") String audience,
                                @Param("topic") String topic,

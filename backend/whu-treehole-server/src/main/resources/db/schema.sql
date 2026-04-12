@@ -63,6 +63,44 @@ CREATE TABLE IF NOT EXISTS notices (
     sort_order INT NOT NULL DEFAULT 0
 );
 
+CREATE TABLE IF NOT EXISTS announcements (
+    id BIGINT PRIMARY KEY AUTO_INCREMENT,
+    announcement_code VARCHAR(64) NOT NULL UNIQUE,
+    title VARCHAR(255) NOT NULL,
+    summary VARCHAR(255) NOT NULL,
+    content TEXT NOT NULL,
+    category VARCHAR(64) NOT NULL,
+    status VARCHAR(32) NOT NULL DEFAULT 'DRAFT',
+    pinned_flag TINYINT(1) NOT NULL DEFAULT 0,
+    popup_flag TINYINT(1) NOT NULL DEFAULT 0,
+    popup_once_per_session TINYINT(1) NOT NULL DEFAULT 1,
+    published_at DATETIME NULL,
+    expire_at DATETIME NULL,
+    created_by BIGINT NOT NULL,
+    updated_by BIGINT NOT NULL,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    KEY idx_announcements_status (status),
+    KEY idx_announcements_published_at (published_at),
+    KEY idx_announcements_expire_at (expire_at),
+    CONSTRAINT fk_announcements_created_by FOREIGN KEY (created_by) REFERENCES users (id),
+    CONSTRAINT fk_announcements_updated_by FOREIGN KEY (updated_by) REFERENCES users (id)
+);
+
+CREATE TABLE IF NOT EXISTS trending_topic_rules (
+    id BIGINT PRIMARY KEY AUTO_INCREMENT,
+    topic_key VARCHAR(128) NOT NULL UNIQUE,
+    display_name VARCHAR(128) NOT NULL,
+    merge_target_key VARCHAR(128) NULL,
+    hidden_flag TINYINT(1) NOT NULL DEFAULT 0,
+    pinned_flag TINYINT(1) NOT NULL DEFAULT 0,
+    sort_order INT NOT NULL DEFAULT 0,
+    updated_by BIGINT NULL,
+    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    KEY idx_trending_topic_rules_merge_target (merge_target_key),
+    CONSTRAINT fk_trending_topic_rules_updated_by FOREIGN KEY (updated_by) REFERENCES users (id)
+);
+
 CREATE TABLE IF NOT EXISTS posts (
     id BIGINT PRIMARY KEY AUTO_INCREMENT,
     post_code VARCHAR(64) NOT NULL UNIQUE,

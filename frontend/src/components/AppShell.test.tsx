@@ -31,6 +31,10 @@ vi.mock('../context/AuthContext', () => ({
   }),
 }));
 
+vi.mock('../services/api', () => ({
+  getAnnouncementPopup: vi.fn().mockResolvedValue(null),
+}));
+
 test('renders a single admin entry in the shared topbar for admin users', () => {
   renderWithProviders(<AppShell />, { route: '/' });
 

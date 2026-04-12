@@ -320,6 +320,105 @@
         )
     </insert>
 
+    <insert id="insertAnnouncement" parameterType="com.whu.treehole.infra.model.AnnouncementData" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO announcements (
+            announcement_code,
+            title,
+            summary,
+            content,
+            category,
+            status,
+            pinned_flag,
+            popup_flag,
+            popup_once_per_session,
+            published_at,
+            expire_at,
+            created_by,
+            updated_by,
+            created_at,
+            updated_at
+        ) VALUES (
+            #{announcementCode},
+            #{title},
+            #{summary},
+            #{content},
+            #{category},
+            #{status},
+            #{pinnedFlag},
+            #{popupFlag},
+            #{popupOncePerSession},
+            #{publishedAt},
+            #{expireAt},
+            #{createdBy},
+            #{updatedBy},
+            #{createdAt},
+            #{updatedAt}
+        )
+    </insert>
+
+    <update id="updateAnnouncement" parameterType="com.whu.treehole.infra.model.AnnouncementData">
+        UPDATE announcements
+        SET title = #{title},
+            summary = #{summary},
+            content = #{content},
+            category = #{category},
+            pinned_flag = #{pinnedFlag},
+            popup_flag = #{popupFlag},
+            popup_once_per_session = #{popupOncePerSession},
+            published_at = #{publishedAt},
+            expire_at = #{expireAt},
+            updated_by = #{updatedBy},
+            updated_at = #{updatedAt}
+        WHERE announcement_code = #{announcementCode}
+    </update>
+
+    <update id="publishAnnouncement">
+        UPDATE announcements
+        SET status = 'PUBLISHED',
+            published_at = #{publishedAt},
+            updated_by = #{updatedBy},
+            updated_at = #{updatedAt}
+        WHERE announcement_code = #{announcementCode}
+    </update>
+
+    <update id="offlineAnnouncement">
+        UPDATE announcements
+        SET status = 'OFFLINE',
+            updated_by = #{updatedBy},
+            updated_at = #{updatedAt}
+        WHERE announcement_code = #{announcementCode}
+    </update>
+
+    <insert id="upsertTrendingTopicRule" parameterType="com.whu.treehole.infra.model.TrendingTopicRuleData" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO trending_topic_rules (
+            topic_key,
+            display_name,
+            merge_target_key,
+            hidden_flag,
+            pinned_flag,
+            sort_order,
+            updated_by,
+            updated_at
+        ) VALUES (
+            #{topicKey},
+            #{displayName},
+            #{mergeTargetKey},
+            #{hiddenFlag},
+            #{pinnedFlag},
+            #{sortOrder},
+            #{updatedBy},
+            #{updatedAt}
+        )
+        ON DUPLICATE KEY UPDATE
+            display_name = VALUES(display_name),
+            merge_target_key = VALUES(merge_target_key),
+            hidden_flag = VALUES(hidden_flag),
+            pinned_flag = VALUES(pinned_flag),
+            sort_order = VALUES(sort_order),
+            updated_by = VALUES(updated_by),
+            updated_at = VALUES(updated_at)
+    </insert>
+
     <insert id="insertReport" parameterType="com.whu.treehole.infra.model.ReportData" useGeneratedKeys="true" keyProperty="id">
         INSERT INTO reports (
             report_code,

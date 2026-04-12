@@ -5,11 +5,13 @@ import { AppProvider } from './context/AppContext';
 import { useAuthContext } from './context/AuthContext';
 import { AlumniPage } from './pages/AlumniPage';
 import { AdminPage } from './pages/AdminPage';
+import { AnnouncementsPage } from './pages/AnnouncementsPage';
 import { HomePage } from './pages/HomePage';
 import { LoginPage } from './pages/LoginPage';
 import { ProfilePage } from './pages/ProfilePage';
 import { RegisterPage } from './pages/RegisterPage';
 import { SearchPage } from './pages/SearchPage';
+import { TrendingTopicsPage } from './pages/TrendingTopicsPage';
 import { TopicsPage } from './pages/TopicsPage';
 
 function AuthLoading() {
@@ -48,6 +50,8 @@ function AdminGuard() {
     hasPermission('report.read.any') ||
     hasPermission('user.ban') ||
     hasPermission('role.assign.admin') ||
+    hasPermission('trending.read.any') ||
+    hasPermission('announcement.read.any') ||
     hasPermission('audit.read.moderation') ||
     hasPermission('audit.read.all');
 
@@ -90,6 +94,8 @@ export default function App() {
       <Route element={<ProtectedApp />}>
         <Route path="/" element={<HomePage />} />
         <Route path="/topics" element={<TopicsPage />} />
+        <Route path="/topics/trending" element={<TrendingTopicsPage />} />
+        <Route path="/announcements" element={<AnnouncementsPage />} />
         <Route path="/alumni" element={<AlumniPage />} />
         <Route path="/profile" element={<ProfilePage />} />
         <Route path="/search" element={<SearchPage />} />

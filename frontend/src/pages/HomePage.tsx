@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { Icon } from '../components/Icon';
 import { PostCard } from '../components/PostCard';
 import { useAppContext } from '../context/AppContext';
 import { campusMoodQuotes, encouragementQuotes } from '../data/homeQuotes';
@@ -127,11 +126,13 @@ export function HomePage() {
           <section className="surface-card">
             <div className="section-head">
               <h2>热议话题</h2>
-              <Icon name="spark" className="icon" />
+              <Link className="secondary-button secondary-button--compact" to="/topics/trending">
+                查看更多
+              </Link>
             </div>
             <div className="list-stack">
-              {topicRankings.map((item) => (
-                <Link key={item.id} className="rank-item" to={`/?topic=${item.label.slice(1)}`}>
+              {topicRankings.slice(0, 5).map((item) => (
+                <Link key={item.id} className="rank-item" to={`/?topic=${encodeURIComponent(item.label.slice(1))}`}>
                   <strong>{item.label}</strong>
                   <span>{item.heat}</span>
                 </Link>
@@ -142,14 +143,16 @@ export function HomePage() {
           <section className="surface-card">
             <div className="section-head">
               <h2>校园公告</h2>
-              <span className="eyebrow">Campus</span>
+              <Link className="secondary-button secondary-button--compact" to="/announcements">
+                查看更多
+              </Link>
             </div>
             <div className="list-stack">
               {campusNotices.map((notice) => (
-                <article key={notice.id} className="notice-item">
+                <Link key={notice.id} className="notice-item" to={`/announcements?code=${encodeURIComponent(notice.id)}`}>
                   <strong>{notice.title}</strong>
                   <span>{notice.meta}</span>
-                </article>
+                </Link>
               ))}
             </div>
           </section>

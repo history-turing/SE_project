@@ -3,6 +3,8 @@ import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { useAppContext } from '../context/AppContext';
 import { useAuthContext } from '../context/AuthContext';
 import { navItems } from '../data/siteData';
+import { getAnnouncementPopup } from '../services/api';
+import { AnnouncementPopupModal } from './AnnouncementPopupModal';
 import { ComposerModal } from './ComposerModal';
 import { Icon } from './Icon';
 
@@ -11,12 +13,17 @@ export function AppShell() {
   const { hasPermission, logout, user } = useAuthContext();
   const [openComposer, setOpenComposer] = useState(false);
   const [searchKeyword, setSearchKeyword] = useState('');
+  const [popupAnnouncement, setPopupAnnouncement] = useState<{ code: string; title: string; content: string } | null>(
+    null,
+  );
   const navigate = useNavigate();
   const location = useLocation();
   const canAccessAdmin =
     hasPermission('report.read.any') ||
     hasPermission('user.ban') ||
     hasPermission('role.assign.admin') ||
+    hasPermission('trending.read.any') ||
+    hasPermission('announcement.read.any') ||
     hasPermission('audit.read.moderation') ||
     hasPermission('audit.read.all');
 
@@ -24,6 +31,43 @@ export function AppShell() {
     const keyword = new URLSearchParams(location.search).get('q') ?? '';
     setSearchKeyword(location.pathname === '/search' ? keyword : '');
   }, [location.pathname, location.search]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadPopup() {
+      try {
+        const popup = await getAnnouncementPopup();
+        if (!popup || cancelled) {
+          return;
+        }
+        const storageKey = `announcement-popup-dismissed:${popup.code}`;
+        if (popup.popupOncePerSession && window.sessionStorage.getItem(storageKey) === '1') {
+          return;
+        }
+        setPopupAnnouncement({
+          code: popup.code,
+          title: popup.title,
+          content: popup.content,
+        });
+      } catch (error) {
+        console.error('加载公告弹窗失败。', error);
+      }
+    }
+
+    void loadPopup();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  function closePopupAnnouncement() {
+    if (popupAnnouncement) {
+      window.sessionStorage.setItem(`announcement-popup-dismissed:${popupAnnouncement.code}`, '1');
+    }
+    setPopupAnnouncement(null);
+  }
 
   function submitSearch() {
     const next = searchKeyword.trim();
@@ -125,6 +169,12 @@ export function AppShell() {
       </nav>
 
       <ComposerModal open={openComposer} onClose={() => setOpenComposer(false)} onSubmit={composePost} />
+      <AnnouncementPopupModal
+        open={Boolean(popupAnnouncement)}
+        title={popupAnnouncement?.title ?? ''}
+        content={popupAnnouncement?.content ?? ''}
+        onClose={closePopupAnnouncement}
+      />
     </div>
   );
 }

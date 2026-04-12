@@ -20,6 +20,14 @@ export const campusMoodQuotes: RotatingQuote[] = [
     text: '且将新火试新茶，诗酒趁年华。',
     source: '苏轼《望江南·超然台作》',
   },
+  {
+    text: '明月松间照，清泉石上流。',
+    source: '王维《山居秋暝》',
+  },
+  {
+    text: '随意春芳歇，王孙自可留。',
+    source: '王维《山居秋暝》',
+  },
 ];
 
 export const encouragementQuotes: RotatingQuote[] = [
@@ -29,7 +37,7 @@ export const encouragementQuotes: RotatingQuote[] = [
   },
   {
     text: '千淘万漉虽辛苦，吹尽狂沙始到金。',
-    source: '刘禹锡《浪淘沙九首·其八》',
+    source: '刘禹锡《浪淘沙·其八》',
   },
   {
     text: '会当凌绝顶，一览众山小。',
@@ -38,5 +46,13 @@ export const encouragementQuotes: RotatingQuote[] = [
   {
     text: '俱怀逸兴壮思飞，欲上青天揽明月。',
     source: '李白《宣州谢朓楼饯别校书叔云》',
+  },
+  {
+    text: '山重水复疑无路，柳暗花明又一村。',
+    source: '陆游《游山西村》',
+  },
+  {
+    text: '大鹏一日同风起，扶摇直上九万里。',
+    source: '李白《上李邕》',
   },
 ];

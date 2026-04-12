@@ -1311,6 +1311,22 @@ button {
   max-width: 560px;
 }
 
+.announcement-popup {
+  max-width: 720px;
+}
+
+.announcement-popup__content,
+.announcement-detail__content {
+  display: grid;
+  gap: 14px;
+  line-height: 1.8;
+}
+
+.announcement-popup__content p,
+.announcement-detail__content p {
+  margin: 0;
+}
+
 .admin-page {
   display: grid;
   gap: 20px;

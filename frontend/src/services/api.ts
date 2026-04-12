@@ -1,6 +1,10 @@
 import type {
   AdminUser,
   AlumniContact,
+  AnnouncementDetail,
+  AnnouncementPopup,
+  AnnouncementSavePayload,
+  AnnouncementSummary,
   Audience,
   AuditLog,
   AuthUser,
@@ -16,6 +20,8 @@ import type {
   Role,
   SearchResult,
   StoryCard,
+  TrendingTopicAdmin,
+  TrendingTopicRulePayload,
   TopicGroup,
   UserProfile,
 } from '../types';
@@ -126,12 +132,28 @@ export function getTopicsPage() {
   return request<TopicsPageData>('/pages/topics?scope=ALL');
 }
 
+export function getTrendingTopics() {
+  return request<RankingItem[]>('/topics/trending');
+}
+
 export function getAlumniPage() {
   return request<AlumniPageData>('/pages/alumni');
 }
 
 export function getProfilePage() {
   return request<ProfilePageData>('/pages/profile');
+}
+
+export function getAnnouncements() {
+  return request<AnnouncementSummary[]>('/announcements');
+}
+
+export function getAnnouncementDetail(announcementCode: string) {
+  return request<AnnouncementDetail>(`/announcements/${announcementCode}`);
+}
+
+export function getAnnouncementPopup() {
+  return request<AnnouncementPopup | null>('/announcements/popup');
 }
 
 export function searchAll(keyword: string) {
@@ -218,6 +240,47 @@ export function getAdminRoles() {
 
 export function getAuditLogs() {
   return request<AuditLog[]>('/admin/audit-logs');
+}
+
+export function getAdminTrendingTopics() {
+  return request<TrendingTopicAdmin[]>('/admin/trending-topics');
+}
+
+export function saveTrendingTopicRule(payload: TrendingTopicRulePayload) {
+  return request<void>('/admin/trending-topics/rules', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  });
+}
+
+export function getAdminAnnouncements() {
+  return request<AnnouncementSummary[]>('/admin/announcements');
+}
+
+export function createAnnouncement(payload: AnnouncementSavePayload) {
+  return request<AnnouncementSummary>('/admin/announcements', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  });
+}
+
+export function updateAnnouncement(announcementCode: string, payload: AnnouncementSavePayload) {
+  return request<AnnouncementSummary>(`/admin/announcements/${announcementCode}`, {
+    method: 'PUT',
+    body: JSON.stringify(payload),
+  });
+}
+
+export function publishAnnouncement(announcementCode: string) {
+  return request<void>(`/admin/announcements/${announcementCode}/publish`, {
+    method: 'POST',
+  });
+}
+
+export function offlineAnnouncement(announcementCode: string) {
+  return request<void>(`/admin/announcements/${announcementCode}/offline`, {
+    method: 'POST',
+  });
 }
 
 export function assignUserRole(userCode: string, roleCode: string) {

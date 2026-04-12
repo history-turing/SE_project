@@ -5,10 +5,12 @@ package com.whu.treehole.infra.mapper;
 import com.whu.treehole.infra.model.FollowStateData;
 import com.whu.treehole.infra.model.InteractionStateData;
 import com.whu.treehole.infra.model.MessageData;
+import com.whu.treehole.infra.model.AnnouncementData;
 import com.whu.treehole.infra.model.PostCommentData;
 import com.whu.treehole.infra.model.PostData;
 import com.whu.treehole.infra.model.AuditLogData;
 import com.whu.treehole.infra.model.ReportData;
+import com.whu.treehole.infra.model.TrendingTopicRuleData;
 import java.time.LocalDateTime;
 import org.apache.ibatis.annotations.Param;
 
@@ -96,6 +98,21 @@ public interface PortalCommandMapper {
                               @Param("conversationCode") String conversationCode);
 
     void insertAuditLog(AuditLogData auditLogData);
+
+    void insertAnnouncement(AnnouncementData announcementData);
+
+    void updateAnnouncement(AnnouncementData announcementData);
+
+    void publishAnnouncement(@Param("announcementCode") String announcementCode,
+                             @Param("publishedAt") LocalDateTime publishedAt,
+                             @Param("updatedBy") Long updatedBy,
+                             @Param("updatedAt") LocalDateTime updatedAt);
+
+    void offlineAnnouncement(@Param("announcementCode") String announcementCode,
+                             @Param("updatedBy") Long updatedBy,
+                             @Param("updatedAt") LocalDateTime updatedAt);
+
+    void upsertTrendingTopicRule(TrendingTopicRuleData trendingTopicRuleData);
 
     void insertReport(ReportData reportData);
 
