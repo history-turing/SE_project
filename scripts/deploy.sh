@@ -82,11 +82,14 @@ compose_cmd exec -T mysql mysql -uroot -p"${MYSQL_ROOT_PASSWORD}" -D "${MYSQL_DA
 compose_cmd exec -T mysql mysql -uroot -p"${MYSQL_ROOT_PASSWORD}" -D "${MYSQL_DATABASE}" \
   < backend/whu-treehole-server/src/main/resources/db/data.sql
 
-compose_cmd up -d --build backend message-service gateway frontend
+compose_cmd up -d --build --force-recreate backend message-service gateway
 
 wait_for_service backend healthy 36 5
 wait_for_service message-service healthy 36 5
 wait_for_service gateway healthy 36 5
+
+compose_cmd up -d --build --force-recreate frontend
+
 wait_for_service frontend healthy 24 5
 
 compose_cmd ps
