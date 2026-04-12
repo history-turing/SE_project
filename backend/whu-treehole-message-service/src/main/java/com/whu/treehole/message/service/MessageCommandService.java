@@ -1,6 +1,7 @@
 package com.whu.treehole.message.service;
 
 import com.whu.treehole.common.exception.BusinessException;
+import com.whu.treehole.domain.dto.MessageEventDto;
 import com.whu.treehole.domain.dto.MessageDto;
 import com.whu.treehole.domain.dto.MessageSendRequest;
 import com.whu.treehole.domain.enums.MessageStatus;
@@ -8,9 +9,12 @@ import com.whu.treehole.domain.enums.MessageType;
 import com.whu.treehole.infra.mapper.MessageDomainMapper;
 import com.whu.treehole.infra.model.DmConversationParticipantData;
 import com.whu.treehole.infra.model.DmMessageData;
+import com.whu.treehole.infra.model.UserProfileData;
 import java.time.Clock;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.List;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -21,14 +25,23 @@ public class MessageCommandService {
 
     private final MessageDomainMapper messageDomainMapper;
     private final Clock clock;
+    private final MessageEventPublisher messageEventPublisher;
 
-    public MessageCommandService(MessageDomainMapper messageDomainMapper) {
-        this(messageDomainMapper, Clock.system(Clock.systemDefaultZone().getZone()));
+    MessageCommandService(MessageDomainMapper messageDomainMapper) {
+        this(messageDomainMapper, Clock.systemDefaultZone(), null);
     }
 
     MessageCommandService(MessageDomainMapper messageDomainMapper, Clock clock) {
+        this(messageDomainMapper, clock, null);
+    }
+
+    @Autowired
+    public MessageCommandService(MessageDomainMapper messageDomainMapper,
+                                 Clock clock,
+                                 MessageEventPublisher messageEventPublisher) {
         this.messageDomainMapper = messageDomainMapper;
         this.clock = clock;
+        this.messageEventPublisher = messageEventPublisher;
     }
 
     @Transactional
@@ -68,6 +81,7 @@ public class MessageCommandService {
         messageDomainMapper.insertMessage(messageData);
         messageDomainMapper.updateConversationAfterSend(conversationId, messageData.getId(), now);
         messageDomainMapper.increaseUnreadForPeer(conversationId, operatorUserId);
+        publishCreatedEvent(operatorUserId, conversationCode, messageData.getMessageCode());
 
         return new MessageDto(
                 messageData.getMessageCode(),
@@ -75,5 +89,22 @@ public class MessageCommandService {
                 trimmedContent,
                 now.format(MESSAGE_TIME_FORMATTER)
         );
+    }
+
+    private void publishCreatedEvent(long operatorUserId, String conversationCode, String messageCode) {
+        if (messageEventPublisher == null) {
+            return;
+        }
+        UserProfileData peerData = messageDomainMapper.selectConversationPeer(operatorUserId, conversationCode);
+        if (peerData == null || peerData.getId() == null) {
+            return;
+        }
+        messageEventPublisher.publish(new MessageEventDto(
+                "message.created",
+                conversationCode,
+                messageCode,
+                operatorUserId,
+                List.of(peerData.getId())
+        ));
     }
 }

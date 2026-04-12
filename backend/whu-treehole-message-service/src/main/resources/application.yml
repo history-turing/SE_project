@@ -6,6 +6,17 @@ spring:
     url: jdbc:mysql://${TREEHOLE_DB_HOST:localhost}:${TREEHOLE_DB_PORT:3306}/${TREEHOLE_DB_NAME:se_project}?useUnicode=true&characterEncoding=UTF-8&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true&useSSL=false
     username: ${TREEHOLE_DB_USERNAME:root}
     password: ${TREEHOLE_DB_PASSWORD:}
+  data:
+    redis:
+      host: ${TREEHOLE_REDIS_HOST:localhost}
+      port: ${TREEHOLE_REDIS_PORT:6379}
+      password: ${TREEHOLE_REDIS_PASSWORD:}
+      timeout: 2000ms
+  rabbitmq:
+    host: ${TREEHOLE_RABBITMQ_HOST:localhost}
+    port: ${TREEHOLE_RABBITMQ_PORT:5672}
+    username: ${TREEHOLE_RABBITMQ_USERNAME:guest}
+    password: ${TREEHOLE_RABBITMQ_PASSWORD:guest}
 
 mybatis:
   mapper-locations: classpath*:mapper/*.xml
