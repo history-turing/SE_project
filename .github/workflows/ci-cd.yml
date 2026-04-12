@@ -3,6 +3,7 @@ name: CI/CD
 on:
   push:
   pull_request:
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -69,32 +70,10 @@ jobs:
         run: |
           set -euo pipefail
           ssh -p "${{ secrets.DEPLOY_PORT }}" "${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }}" <<'EOF'
-          set -e
+          set -euo pipefail
           cd /root/SE_project
           git pull --ff-only origin main
-          compose_cmd() {
-            if docker compose version >/dev/null 2>&1; then
-              docker compose "$@"
-            else
-              docker-compose "$@"
-            fi
-          }
-
-          compose_cmd up -d --build
-
-          compose_cmd exec -T mysql mysql -uroot -p"${MYSQL_ROOT_PASSWORD:-jwdyszm0220}" -D "${MYSQL_DATABASE:-se_project}" \
-            < backend/whu-treehole-server/src/main/resources/db/schema.sql
-          compose_cmd exec -T mysql mysql -uroot -p"${MYSQL_ROOT_PASSWORD:-jwdyszm0220}" -D "${MYSQL_DATABASE:-se_project}" \
-            < backend/whu-treehole-server/src/main/resources/db/data.sql
-
-          for attempt in $(seq 1 24); do
-            if curl -fsS http://127.0.0.1/actuator/health | grep -q '"status":"UP"'; then
-              exit 0
-            fi
-            sleep 5
-          done
-
-          compose_cmd ps
-          compose_cmd logs backend --tail=200
-          exit 1
+          export TREEHOLE_DEPLOY_ENV_FILE=.env.production
+          export TREEHOLE_COMPOSE_PROJECT=se_project
+          bash scripts/deploy.sh
           EOF

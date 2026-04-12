@@ -7,18 +7,18 @@ spring:
     driver-class-name: com.mysql.cj.jdbc.Driver
     url: jdbc:mysql://${TREEHOLE_DB_HOST:localhost}:${TREEHOLE_DB_PORT:3306}/${TREEHOLE_DB_NAME:se_project}?useUnicode=true&characterEncoding=UTF-8&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true&useSSL=false
     username: ${TREEHOLE_DB_USERNAME:root}
-    password: ${TREEHOLE_DB_PASSWORD:jwdyszm0220}
+    password: ${TREEHOLE_DB_PASSWORD:}
   data:
     redis:
       host: ${TREEHOLE_REDIS_HOST:localhost}
       port: ${TREEHOLE_REDIS_PORT:6379}
-      password: ${TREEHOLE_REDIS_PASSWORD:jwdyszm0220}
+      password: ${TREEHOLE_REDIS_PASSWORD:}
       timeout: 2000ms
   mail:
     host: ${TREEHOLE_MAIL_HOST:smtp.qq.com}
     port: ${TREEHOLE_MAIL_PORT:587}
-    username: ${TREEHOLE_MAIL_USERNAME:2953695254@qq.com}
-    password: ${TREEHOLE_MAIL_PASSWORD:xpmdhbwnkrkidfei}
+    username: ${TREEHOLE_MAIL_USERNAME:}
+    password: ${TREEHOLE_MAIL_PASSWORD:}
     default-encoding: UTF-8
     properties:
       mail:
@@ -33,7 +33,7 @@ spring:
             required: ${TREEHOLE_MAIL_SMTP_STARTTLS_REQUIRED:false}
           ssl:
             enable: ${TREEHOLE_MAIL_SMTP_SSL_ENABLE:false}
-            trust: ${TREEHOLE_MAIL_SMTP_SSL_TRUST:smtp.qq.com}
+            trust: ${TREEHOLE_MAIL_SMTP_SSL_TRUST:}
   jackson:
     time-zone: Asia/Shanghai
   cache:

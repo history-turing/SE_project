@@ -57,9 +57,6 @@ class PageQueryServiceTest {
         when(portalQueryMapper.selectPosts(eq(AudienceType.HOME.code()), eq(null), eq(null), eq(1L)))
                 .thenReturn(Collections.singletonList(postData));
         when(portalQueryMapper.countTodayPostsByAudience(anyString())).thenReturn(0);
-        when(portalQueryMapper.countTopics()).thenReturn(0);
-        when(portalQueryMapper.selectRankings()).thenReturn(Collections.emptyList());
-        when(portalQueryMapper.selectNotices()).thenReturn(Collections.emptyList());
         when(authMapper.selectPermissionsByUserId(1L)).thenReturn(Collections.emptyList());
 
         HomePageDto homePage = pageQueryService.getHomePage(1L, null, null);
