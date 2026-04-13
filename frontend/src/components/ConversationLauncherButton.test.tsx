@@ -3,6 +3,10 @@ import { screen } from '@testing-library/react';
 import { renderWithProviders } from '../test/renderWithProviders';
 import { ConversationLauncherButton } from './ConversationLauncherButton';
 
+const apiMocks = vi.hoisted(() => ({
+  createDirectConversation: vi.fn().mockResolvedValue({ conversationCode: 'dm-1001' }),
+}));
+
 vi.mock('../context/AuthContext', () => ({
   useAuthContext: () => ({
     user: {
@@ -20,15 +24,21 @@ vi.mock('../context/AuthContext', () => ({
 }));
 
 vi.mock('../services/api', () => ({
-  createDirectConversation: vi.fn().mockResolvedValue({ conversationCode: 'dm-1001' }),
+  createDirectConversation: apiMocks.createDirectConversation,
 }));
 
-test('launches a direct conversation from author entry', async () => {
+test('launches an anonymous-safe conversation from anonymous author entry', async () => {
   const user = userEvent.setup();
 
-  renderWithProviders(<ConversationLauncherButton peerUserCode="user-9" />);
+  renderWithProviders(
+    <ConversationLauncherButton peerUserCode="user-9" sourcePostCode="post-1001" anonymousEntry />,
+  );
 
   await user.click(screen.getByRole('button', { name: '发私信' }));
 
-  expect(await screen.findByText('已进入私信会话')).toBeInTheDocument();
+  expect(apiMocks.createDirectConversation).toHaveBeenCalledWith({
+    peerUserCode: 'user-9',
+    sourcePostCode: 'post-1001',
+    anonymousEntry: true,
+  });
 });

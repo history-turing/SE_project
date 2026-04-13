@@ -464,6 +464,9 @@ CREATE TABLE IF NOT EXISTS dm_conversations (
     id BIGINT PRIMARY KEY AUTO_INCREMENT,
     conversation_code VARCHAR(64) NOT NULL UNIQUE,
     conversation_type VARCHAR(16) NOT NULL,
+    conversation_scene VARCHAR(32) NOT NULL DEFAULT 'DIRECT',
+    source_post_code VARCHAR(64) NULL,
+    anonymous_flag TINYINT(1) NOT NULL DEFAULT 0,
     status VARCHAR(16) NOT NULL,
     created_by BIGINT NOT NULL,
     last_message_id BIGINT NULL,
@@ -471,6 +474,57 @@ CREATE TABLE IF NOT EXISTS dm_conversations (
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
+
+SET @treehole_add_dm_conversation_scene = (
+    SELECT IF(
+                   EXISTS(
+                           SELECT 1
+                           FROM information_schema.columns
+                           WHERE table_schema = DATABASE()
+                             AND table_name = 'dm_conversations'
+                             AND column_name = 'conversation_scene'
+                   ),
+                   'SELECT 1',
+                   'ALTER TABLE dm_conversations ADD COLUMN conversation_scene VARCHAR(32) NOT NULL DEFAULT ''DIRECT'' AFTER conversation_type'
+           )
+);
+PREPARE stmt_add_dm_conversation_scene FROM @treehole_add_dm_conversation_scene;
+EXECUTE stmt_add_dm_conversation_scene;
+DEALLOCATE PREPARE stmt_add_dm_conversation_scene;
+
+SET @treehole_add_dm_source_post_code = (
+    SELECT IF(
+                   EXISTS(
+                           SELECT 1
+                           FROM information_schema.columns
+                           WHERE table_schema = DATABASE()
+                             AND table_name = 'dm_conversations'
+                             AND column_name = 'source_post_code'
+                   ),
+                   'SELECT 1',
+                   'ALTER TABLE dm_conversations ADD COLUMN source_post_code VARCHAR(64) NULL AFTER conversation_scene'
+           )
+);
+PREPARE stmt_add_dm_source_post_code FROM @treehole_add_dm_source_post_code;
+EXECUTE stmt_add_dm_source_post_code;
+DEALLOCATE PREPARE stmt_add_dm_source_post_code;
+
+SET @treehole_add_dm_anonymous_flag = (
+    SELECT IF(
+                   EXISTS(
+                           SELECT 1
+                           FROM information_schema.columns
+                           WHERE table_schema = DATABASE()
+                             AND table_name = 'dm_conversations'
+                             AND column_name = 'anonymous_flag'
+                   ),
+                   'SELECT 1',
+                   'ALTER TABLE dm_conversations ADD COLUMN anonymous_flag TINYINT(1) NOT NULL DEFAULT 0 AFTER source_post_code'
+           )
+);
+PREPARE stmt_add_dm_anonymous_flag FROM @treehole_add_dm_anonymous_flag;
+EXECUTE stmt_add_dm_anonymous_flag;
+DEALLOCATE PREPARE stmt_add_dm_anonymous_flag;
 
 CREATE TABLE IF NOT EXISTS dm_conversation_participants (
     id BIGINT PRIMARY KEY AUTO_INCREMENT,

@@ -9,9 +9,9 @@ import type {
   AuditLog,
   AuthUser,
   ComposePayload,
-  Conversation,
   DmConversationDetail,
   DmConversationSummary,
+  DmRealtimeEvent,
   FeedPost,
   HomeStats,
   NoticeItem,
@@ -27,48 +27,19 @@ import type {
   TopicGroup,
   UserProfile,
 } from '../types';
+import {
+  mapConversationDetail,
+  mapConversationSummary,
+  mapRealtimeEvent,
+  type DmConversationDetailResponse,
+  type DmConversationListItemResponse,
+  type MessageRealtimeEventResponse,
+} from '../mappers/messageViewModels';
 
 interface ApiEnvelope<T> {
   code: number;
   message: string;
   data: T;
-}
-
-interface DmConversationListItemResponse {
-  conversationCode: string;
-  peerName: string;
-  peerSubtitle: string;
-  peerAvatarUrl: string;
-  lastMessage: string | null;
-  displayTime: string | null;
-  unreadCount: number | null;
-}
-
-interface DmConversationPeerResponse {
-  userCode: string;
-  name: string;
-  subtitle: string;
-  avatarUrl: string;
-}
-
-interface DmConversationDetailResponse {
-  conversationCode: string;
-  status: string;
-  peer: DmConversationPeerResponse | null;
-  lastMessage: string | null;
-  lastMessageTime: string | null;
-  unreadCount: number | null;
-  messages: {
-    id: string;
-    sender: 'me' | 'them';
-    text: string;
-    time: string;
-    messageType?: string;
-    status?: string;
-    recalled?: boolean;
-    recalledAt?: string | null;
-    canRecall?: boolean;
-  }[];
 }
 
 export class ApiError extends Error {
@@ -106,7 +77,7 @@ export interface ProfilePageData {
   profile: UserProfile;
   myPosts: FeedPost[];
   savedPosts: FeedPost[];
-  conversations: Conversation[];
+  conversations: DmConversationSummary[];
   activeConversationId: string;
 }
 
@@ -346,43 +317,29 @@ export function getAdminAnnouncements() {
 
 export function getDmConversations() {
   return request<DmConversationListItemResponse[]>('/dm/conversations').then((items) =>
-    items.map((item) => ({
-      conversationCode: item.conversationCode,
-      peer: {
-        userCode: '',
-        name: item.peerName,
-        subtitle: item.peerSubtitle,
-        avatar: item.peerAvatarUrl,
-      },
-      lastMessage: item.lastMessage,
-      displayTime: item.displayTime,
-      unreadCount: item.unreadCount ?? 0,
-    })),
+    items.map(mapConversationSummary),
   );
 }
 
 export function getDmConversationDetail(conversationCode: string) {
-  return request<DmConversationDetailResponse>(`/dm/conversations/${conversationCode}`).then((detail) => ({
-    conversationCode: detail.conversationCode,
-    status: detail.status,
-    peer: {
-      userCode: detail.peer?.userCode ?? '',
-      name: detail.peer?.name ?? '私信会话',
-      subtitle: detail.peer?.subtitle ?? '',
-      avatar: detail.peer?.avatarUrl ?? '',
-    },
-    lastMessage: detail.lastMessage,
-    displayTime: detail.lastMessageTime,
-    unreadCount: detail.unreadCount ?? 0,
-    messages: detail.messages,
-  }));
+  return request<DmConversationDetailResponse>(`/dm/conversations/${conversationCode}`).then(
+    mapConversationDetail,
+  );
 }
 
-export function createDirectConversation(peerUserCode: string) {
+export function createDirectConversation(payload: {
+  peerUserCode: string;
+  sourcePostCode?: string;
+  anonymousEntry?: boolean;
+}) {
   return request<string>('/dm/conversations/direct', {
     method: 'POST',
-    body: JSON.stringify({ peerUserCode }),
+    body: JSON.stringify(payload),
   }).then((conversationCode) => ({ conversationCode }));
+}
+
+export function parseDmRealtimeEvent(raw: string): DmRealtimeEvent {
+  return mapRealtimeEvent(JSON.parse(raw) as MessageRealtimeEventResponse);
 }
 
 export function sendDmMessage(conversationCode: string, content: string) {
@@ -490,22 +447,6 @@ export function restoreComment(postCode: string, commentCode: string) {
 
 export function toggleFollow(contactId: string) {
   return request<ToggleResult>(`/alumni/contacts/${contactId}/follow/toggle`, {
-    method: 'POST',
-  });
-}
-
-export function sendMessage(conversationId: string, text: string) {
-  return request<{ id: string; sender: 'me' | 'them'; text: string; time: string }>(
-    `/conversations/${conversationId}/messages`,
-    {
-      method: 'POST',
-      body: JSON.stringify({ text }),
-    },
-  );
-}
-
-export function markConversationRead(conversationId: string) {
-  return request<null>(`/conversations/${conversationId}/read`, {
     method: 'POST',
   });
 }

@@ -507,8 +507,11 @@ INSERT IGNORE INTO conversations (id, conversation_code, owner_user_id, peer_nam
 (2, 'museum', 1, '信管男神（自封）', '周末逛展搭子', 'https://example.com/conversations/museum.jpg', '下次一起去万林博物馆看展吗？', '昨天', 0, '2026-04-07 20:00:00'),
 (3, 'seat', 1, '图书馆占座狂魔', '自习室情报官', 'https://example.com/conversations/seat.jpg', '不好意思，那个座位已经有人了。', '星期一', 0, '2026-04-06 09:00:00');
 
-INSERT IGNORE INTO dm_conversations (id, conversation_code, conversation_type, status, created_by, last_message_id, last_message_at, created_at, updated_at) VALUES
-(1, 'dm-1001', 'SINGLE', 'ACTIVE', 1, 2, '2026-04-08 10:12:00', '2026-04-08 10:00:00', '2026-04-08 10:12:00');
+INSERT IGNORE INTO dm_conversations (
+    id, conversation_code, conversation_type, conversation_scene, source_post_code, anonymous_flag,
+    status, created_by, last_message_id, last_message_at, created_at, updated_at
+) VALUES
+(1, 'dm-1001', 'DIRECT', 'DIRECT', NULL, 0, 'ACTIVE', 1, 2, '2026-04-08 10:12:00', '2026-04-08 10:00:00', '2026-04-08 10:12:00');
 
 INSERT IGNORE INTO dm_conversation_participants (
     id, conversation_id, user_id, last_read_message_id, last_read_at, unread_count,

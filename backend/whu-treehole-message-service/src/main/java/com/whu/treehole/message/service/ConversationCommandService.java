@@ -2,6 +2,7 @@ package com.whu.treehole.message.service;
 
 import com.whu.treehole.common.exception.BusinessException;
 import com.whu.treehole.domain.dto.DirectConversationRequest;
+import com.whu.treehole.domain.dto.MessageRealtimeEventDto;
 import com.whu.treehole.domain.enums.ConversationStatus;
 import com.whu.treehole.infra.mapper.MessageDomainMapper;
 import com.whu.treehole.infra.model.DmConversationData;
@@ -17,15 +18,22 @@ public class ConversationCommandService {
 
     private final MessageDomainMapper messageDomainMapper;
     private final Clock clock;
+    private final MessageEventPublisher messageEventPublisher;
+    private final ConversationQueryService conversationQueryService;
 
     ConversationCommandService(MessageDomainMapper messageDomainMapper) {
-        this(messageDomainMapper, Clock.systemDefaultZone());
+        this(messageDomainMapper, Clock.systemDefaultZone(), null, null);
     }
 
     @Autowired
-    public ConversationCommandService(MessageDomainMapper messageDomainMapper, Clock clock) {
+    public ConversationCommandService(MessageDomainMapper messageDomainMapper,
+                                      Clock clock,
+                                      MessageEventPublisher messageEventPublisher,
+                                      ConversationQueryService conversationQueryService) {
         this.messageDomainMapper = messageDomainMapper;
         this.clock = clock;
+        this.messageEventPublisher = messageEventPublisher;
+        this.conversationQueryService = conversationQueryService;
     }
 
     @Transactional
@@ -38,7 +46,13 @@ public class ConversationCommandService {
         if (request.peerUserCode() == null || request.peerUserCode().isBlank()) {
             throw new IllegalArgumentException("peerUserCode required");
         }
-        DmConversationData existing = messageDomainMapper.selectSingleConversationBetweenUsers(operatorUserId, resolvedPeerUserId);
+        boolean anonymousScene = isAnonymousScene(request);
+        String conversationScene = anonymousScene ? "ANONYMOUS_POST" : "DIRECT";
+        DmConversationData existing = messageDomainMapper.selectSingleConversationBetweenUsers(
+                operatorUserId,
+                resolvedPeerUserId,
+                conversationScene,
+                anonymousScene ? request.sourcePostCode().trim() : null);
         if (existing != null) {
             return existing.getConversationCode();
         }
@@ -46,7 +60,10 @@ public class ConversationCommandService {
         LocalDateTime now = LocalDateTime.now(clock);
         DmConversationData conversationData = new DmConversationData();
         conversationData.setConversationCode("dm-" + System.currentTimeMillis());
-        conversationData.setConversationType("SINGLE");
+        conversationData.setConversationType(conversationScene);
+        conversationData.setConversationScene(conversationScene);
+        conversationData.setSourcePostCode(anonymousScene ? request.sourcePostCode().trim() : null);
+        conversationData.setAnonymousFlag(anonymousScene);
         conversationData.setStatus(ConversationStatus.ACTIVE);
         conversationData.setCreatedBy(operatorUserId);
         conversationData.setCreatedAt(now);
@@ -80,6 +97,12 @@ public class ConversationCommandService {
         return conversationData.getConversationCode();
     }
 
+    private boolean isAnonymousScene(DirectConversationRequest request) {
+        return request.anonymousEntry()
+                && request.sourcePostCode() != null
+                && !request.sourcePostCode().isBlank();
+    }
+
     @Transactional
     public void markConversationRead(long operatorUserId, String conversationCode) {
         DmConversationData conversationData =
@@ -103,5 +126,16 @@ public class ConversationCommandService {
                 conversationCode,
                 conversationData.getLastMessageId(),
                 now);
+        publishReadEvent(conversationCode);
+    }
+
+    private void publishReadEvent(String conversationCode) {
+        if (messageEventPublisher == null || conversationQueryService == null) {
+            return;
+        }
+        messageEventPublisher.publish(new MessageRealtimeEventDto(
+                "conversation.read",
+                conversationCode,
+                conversationQueryService.buildRecipientStates(conversationCode, null)));
     }
 }

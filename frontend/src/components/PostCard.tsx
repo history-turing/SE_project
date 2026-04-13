@@ -22,7 +22,7 @@ function PostAuthorBlock({ post }: { post: FeedPost }) {
     </>
   );
 
-  if (!post.authorUserCode) {
+  if (post.anonymous || !post.authorUserCode) {
     return content;
   }
 
@@ -53,7 +53,7 @@ export function PostCard({ post }: PostCardProps) {
       await deletePost(post.id);
       removePost(post.id);
     } catch (error) {
-      console.error('删除帖子失败。', error);
+      console.error('delete post failed', error);
       setDeleteError('删除帖子失败，请稍后重试。');
     } finally {
       setDeleting(false);
@@ -68,7 +68,7 @@ export function PostCard({ post }: PostCardProps) {
           {post.badge ? <span className="post-card__badge">{post.badge}</span> : null}
         </div>
         <span className="post-card__time">
-          {post.location ? `${post.location} · ` : ''}
+          {post.location ? `${post.location} 路 ` : ''}
           {post.createdAt}
         </span>
       </div>

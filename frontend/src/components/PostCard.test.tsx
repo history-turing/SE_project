@@ -26,12 +26,12 @@ test('renders author entry to the public user profile when author user code exis
     <PostCard
       post={{
         id: 'post-1',
-        title: '帖子标题',
-        content: '帖子内容',
-        author: '测试用户',
+        title: 'post-title',
+        content: 'post-content',
+        author: 'tester',
         authorUserCode: 'user-9',
-        handle: '信管 · 2022',
-        topic: '校园日常',
+        handle: 'handle',
+        topic: 'topic',
         audience: '首页',
         createdAt: '2026-04-12 10:00',
         likes: 1,
@@ -42,5 +42,30 @@ test('renders author entry to the public user profile when author user code exis
     />,
   );
 
-  expect(screen.getByRole('link', { name: /测试用户/ })).toHaveAttribute('href', '/users/user-9');
+  expect(screen.getByRole('link', { name: /tester/i })).toHaveAttribute('href', '/users/user-9');
+});
+
+test('does not render a public profile link for anonymous posts', () => {
+  renderWithProviders(
+    <PostCard
+      post={{
+        id: 'post-2',
+        title: 'anonymous-post',
+        content: 'anonymous-content',
+        author: 'anonymous-author',
+        authorUserCode: 'user-9',
+        handle: 'anonymous-handle',
+        topic: 'topic',
+        audience: '首页',
+        createdAt: '2026-04-12 10:00',
+        likes: 1,
+        comments: 0,
+        saves: 0,
+        accent: 'rose',
+        anonymous: true,
+      }}
+    />,
+  );
+
+  expect(screen.queryByRole('link', { name: /anonymous-author/i })).not.toBeInTheDocument();
 });

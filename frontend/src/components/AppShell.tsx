@@ -9,7 +9,7 @@ import { ComposerModal } from './ComposerModal';
 import { Icon } from './Icon';
 
 export function AppShell() {
-  const { composePost, profile } = useAppContext();
+  const { composePost, notificationSummary, profile } = useAppContext();
   const { hasPermission, logout, user } = useAuthContext();
   const [openComposer, setOpenComposer] = useState(false);
   const [searchKeyword, setSearchKeyword] = useState('');
@@ -51,7 +51,7 @@ export function AppShell() {
           content: popup.content,
         });
       } catch (error) {
-        console.error('加载公告弹窗失败。', error);
+        console.error('load announcement popup failed', error);
       }
     }
 
@@ -119,8 +119,16 @@ export function AppShell() {
                 }}
               />
             </label>
-            <button className="ghost-button" type="button" aria-label="通知">
+            <button
+              className="ghost-button"
+              type="button"
+              aria-label="通知"
+              onClick={() => navigate('/profile?tab=messages')}
+            >
               <Icon name="bell" className="icon" />
+              {notificationSummary.hasUnread ? (
+                <span className="topbar-badge">{notificationSummary.totalUnread}</span>
+              ) : null}
             </button>
             <button className="primary-button" type="button" onClick={() => setOpenComposer(true)}>
               <Icon name="plus" className="icon" />

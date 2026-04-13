@@ -2,7 +2,7 @@ package com.whu.treehole.message.service;
 
 import com.whu.treehole.common.exception.BusinessException;
 import com.whu.treehole.domain.dto.MessageDto;
-import com.whu.treehole.domain.dto.MessageEventDto;
+import com.whu.treehole.domain.dto.MessageRealtimeEventDto;
 import com.whu.treehole.domain.dto.MessageSendRequest;
 import com.whu.treehole.domain.enums.MessageStatus;
 import com.whu.treehole.domain.enums.MessageType;
@@ -27,31 +27,40 @@ public class MessageCommandService {
     private final MessageDomainMapper messageDomainMapper;
     private final Clock clock;
     private final MessageEventPublisher messageEventPublisher;
+    private final ConversationQueryService conversationQueryService;
     private final Duration recallWindow;
 
     MessageCommandService(MessageDomainMapper messageDomainMapper) {
-        this(messageDomainMapper, Clock.systemDefaultZone(), null, Duration.ofMinutes(2));
+        this(messageDomainMapper, Clock.systemDefaultZone(), null, null, Duration.ofMinutes(2));
     }
 
     MessageCommandService(MessageDomainMapper messageDomainMapper, Clock clock) {
-        this(messageDomainMapper, clock, null, Duration.ofMinutes(2));
+        this(messageDomainMapper, clock, null, null, Duration.ofMinutes(2));
     }
 
     @Autowired
     public MessageCommandService(MessageDomainMapper messageDomainMapper,
                                  Clock clock,
                                  MessageEventPublisher messageEventPublisher,
+                                 ConversationQueryService conversationQueryService,
                                  @Value("${treehole.messaging.recall-window-seconds:120}") long recallWindowSeconds) {
-        this(messageDomainMapper, clock, messageEventPublisher, Duration.ofSeconds(Math.max(30L, recallWindowSeconds)));
+        this(
+                messageDomainMapper,
+                clock,
+                messageEventPublisher,
+                conversationQueryService,
+                Duration.ofSeconds(Math.max(30L, recallWindowSeconds)));
     }
 
     MessageCommandService(MessageDomainMapper messageDomainMapper,
                           Clock clock,
                           MessageEventPublisher messageEventPublisher,
+                          ConversationQueryService conversationQueryService,
                           Duration recallWindow) {
         this.messageDomainMapper = messageDomainMapper;
         this.clock = clock;
         this.messageEventPublisher = messageEventPublisher;
+        this.conversationQueryService = conversationQueryService;
         this.recallWindow = recallWindow;
     }
 
@@ -92,7 +101,7 @@ public class MessageCommandService {
         messageDomainMapper.insertMessage(messageData);
         messageDomainMapper.updateConversationAfterSend(conversationId, messageData.getId(), now);
         messageDomainMapper.increaseUnreadForPeer(conversationId, operatorUserId);
-        publishEvent("message.created", conversationCode, messageData.getMessageCode());
+        publishEvent("message.created", conversationCode, messageData);
 
         return toMessageDto(operatorUserId, messageData);
     }
@@ -125,24 +134,23 @@ public class MessageCommandService {
         messageData.setRecalledAt(now);
         messageData.setUpdatedAt(now);
         messageDomainMapper.recallMessage(messageData.getId(), MessageStatus.REVOKED, now);
-        publishEvent("message.recalled", conversationCode, messageCode);
+        publishEvent("message.recalled", conversationCode, messageData);
         return toMessageDto(operatorUserId, messageData);
     }
 
-    private void publishEvent(String type, String conversationCode, String messageCode) {
-        if (messageEventPublisher == null) {
+    private void publishEvent(String type, String conversationCode, DmMessageData messageData) {
+        if (messageEventPublisher == null || conversationQueryService == null) {
             return;
         }
-        List<Long> targetUserIds = messageDomainMapper.selectConversationParticipantUserIds(conversationCode);
-        if (targetUserIds == null || targetUserIds.isEmpty()) {
+        List<com.whu.treehole.domain.dto.MessageRecipientStateDto> recipientStates =
+                conversationQueryService.buildRecipientStates(conversationCode, messageData);
+        if (recipientStates == null || recipientStates.isEmpty()) {
             return;
         }
-        messageEventPublisher.publish(new MessageEventDto(
+        messageEventPublisher.publish(new MessageRealtimeEventDto(
                 type,
                 conversationCode,
-                messageCode,
-                null,
-                targetUserIds
+                recipientStates
         ));
     }
 

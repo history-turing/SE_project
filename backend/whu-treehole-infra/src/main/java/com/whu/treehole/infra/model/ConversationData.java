@@ -9,6 +9,7 @@ import lombok.Data;
 public class ConversationData {
     private Long id;
     private String conversationCode;
+    private String conversationType;
     private String peerName;
     private String peerSubtitle;
     private String peerAvatarUrl;

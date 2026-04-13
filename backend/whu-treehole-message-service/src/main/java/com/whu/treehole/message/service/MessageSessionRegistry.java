@@ -2,7 +2,7 @@ package com.whu.treehole.message.service;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.whu.treehole.domain.dto.MessageEventDto;
+import com.whu.treehole.domain.dto.MessageRealtimeEventDto;
 import java.io.IOException;
 import java.time.Duration;
 import java.util.ArrayList;
@@ -26,7 +26,7 @@ public class MessageSessionRegistry {
     private final Map<Long, CopyOnWriteArrayList<String>> userSessions = new ConcurrentHashMap<>();
     private final Map<String, Long> sessionOwners = new ConcurrentHashMap<>();
     private final Map<String, WebSocketSession> webSocketSessions = new ConcurrentHashMap<>();
-    private final Map<String, CopyOnWriteArrayList<MessageEventDto>> pendingEvents = new ConcurrentHashMap<>();
+    private final Map<String, CopyOnWriteArrayList<MessageRealtimeEventDto>> pendingEvents = new ConcurrentHashMap<>();
     private final ObjectMapper objectMapper = new ObjectMapper();
     private StringRedisTemplate redisTemplate;
 
@@ -72,15 +72,19 @@ public class MessageSessionRegistry {
         return new ArrayList<>(userSessions.getOrDefault(userId, new CopyOnWriteArrayList<>()));
     }
 
-    public List<MessageEventDto> findPendingEvents(String sessionId) {
+    public List<MessageRealtimeEventDto> findPendingEvents(String sessionId) {
         return new ArrayList<>(pendingEvents.getOrDefault(sessionId, new CopyOnWriteArrayList<>()));
     }
 
-    public void pushEvent(MessageEventDto event) {
-        if (event == null || event.targetUserIds() == null) {
+    public void pushEvent(MessageRealtimeEventDto event) {
+        if (event == null || event.recipientStates() == null) {
             return;
         }
-        for (Long userId : event.targetUserIds()) {
+        for (var state : event.recipientStates()) {
+            Long userId = state.userId();
+            if (userId == null) {
+                continue;
+            }
             for (String sessionId : findSessions(userId)) {
                 pendingEvents.computeIfAbsent(sessionId, ignored -> new CopyOnWriteArrayList<>()).add(event);
                 WebSocketSession session = webSocketSessions.get(sessionId);
@@ -123,7 +127,7 @@ public class MessageSessionRegistry {
         return "treehole:dm:online:user:" + userId;
     }
 
-    private String toJson(MessageEventDto event) {
+    private String toJson(MessageRealtimeEventDto event) {
         try {
             return objectMapper.writeValueAsString(event);
         } catch (JsonProcessingException ex) {

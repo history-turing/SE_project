@@ -5,6 +5,8 @@ import com.whu.treehole.domain.dto.ConversationDetailDto;
 import com.whu.treehole.domain.dto.ConversationListItemDto;
 import com.whu.treehole.domain.dto.ConversationPeerDto;
 import com.whu.treehole.domain.dto.MessageDto;
+import com.whu.treehole.domain.dto.MessageRecipientStateDto;
+import com.whu.treehole.domain.dto.UnreadNotificationDto;
 import com.whu.treehole.domain.enums.MessageStatus;
 import com.whu.treehole.domain.enums.MessageType;
 import com.whu.treehole.infra.mapper.MessageDomainMapper;
@@ -12,6 +14,7 @@ import com.whu.treehole.infra.model.ConversationData;
 import com.whu.treehole.infra.model.DmConversationData;
 import com.whu.treehole.infra.model.DmConversationParticipantData;
 import com.whu.treehole.infra.model.DmMessageData;
+import com.whu.treehole.infra.model.DmUnreadAggregateData;
 import com.whu.treehole.infra.model.UserProfileData;
 import java.time.Clock;
 import java.time.Duration;
@@ -76,8 +79,9 @@ public class ConversationQueryService {
 
         return new ConversationDetailDto(
                 conversationData.getConversationCode(),
+                normalizeConversationType(conversationData),
                 conversationData.getStatus(),
-                toPeerDto(peerData),
+                toPeerDto(peerData, conversationData),
                 lastMessage,
                 lastMessageTime,
                 unreadCount,
@@ -85,9 +89,37 @@ public class ConversationQueryService {
         );
     }
 
+    @Transactional(readOnly = true)
+    public ConversationListItemDto getConversationSummary(long userId, String conversationCode) {
+        ConversationData data = messageDomainMapper.selectConversationSummary(userId, conversationCode);
+        if (data == null) {
+            throw new BusinessException(4042, "浼氳瘽涓嶅瓨鍦?");
+        }
+        return toConversationListItem(data);
+    }
+
+    @Transactional(readOnly = true)
+    public UnreadNotificationDto getUnreadNotification(long userId) {
+        DmUnreadAggregateData aggregate = messageDomainMapper.selectUnreadAggregate(userId);
+        int messagesUnread = aggregate == null || aggregate.getMessagesUnread() == null ? 0 : aggregate.getMessagesUnread();
+        return new UnreadNotificationDto((long) userId, messagesUnread, 0, 0, messagesUnread);
+    }
+
+    @Transactional(readOnly = true)
+    public List<MessageRecipientStateDto> buildRecipientStates(String conversationCode, DmMessageData messageData) {
+        return messageDomainMapper.selectConversationParticipantUserIds(conversationCode).stream()
+                .map(userId -> new MessageRecipientStateDto(
+                        userId,
+                        getConversationSummary(userId, conversationCode),
+                        messageData == null ? null : toMessageDto(userId, messageData),
+                        getUnreadNotification(userId)))
+                .toList();
+    }
+
     private ConversationListItemDto toConversationListItem(ConversationData data) {
         return new ConversationListItemDto(
                 data.getConversationCode(),
+                normalizeConversationType(data.getConversationType()),
                 data.getPeerName(),
                 data.getPeerSubtitle(),
                 data.getPeerAvatarUrl(),
@@ -97,11 +129,35 @@ public class ConversationQueryService {
         );
     }
 
-    private ConversationPeerDto toPeerDto(UserProfileData data) {
+    private ConversationPeerDto toPeerDto(UserProfileData data, DmConversationData conversationData) {
+        if (isAnonymousConversation(conversationData)) {
+            return new ConversationPeerDto(null, "匿名树洞作者", "匿名私信会话", "/images/avatar-anonymous.svg");
+        }
         if (data == null) {
             return null;
         }
         return new ConversationPeerDto(data.getUserCode(), data.getName(), data.getTagline(), data.getAvatarUrl());
+    }
+
+    private String normalizeConversationType(DmConversationData conversationData) {
+        if (conversationData == null) {
+            return "DIRECT";
+        }
+        return normalizeConversationType(conversationData.getConversationType());
+    }
+
+    private String normalizeConversationType(String conversationType) {
+        if (conversationType == null || conversationType.isBlank() || "SINGLE".equalsIgnoreCase(conversationType)) {
+            return "DIRECT";
+        }
+        return conversationType;
+    }
+
+    private boolean isAnonymousConversation(DmConversationData conversationData) {
+        return conversationData != null
+                && (Boolean.TRUE.equals(conversationData.getAnonymousFlag())
+                || "ANONYMOUS_POST".equalsIgnoreCase(conversationData.getConversationScene())
+                || "ANONYMOUS_POST".equalsIgnoreCase(conversationData.getConversationType()));
     }
 
     private MessageDto toMessageDto(long userId, DmMessageData data) {

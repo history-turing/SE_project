@@ -1,6 +1,6 @@
 package com.whu.treehole.message.service;
 
-import com.whu.treehole.domain.dto.MessageEventDto;
+import com.whu.treehole.domain.dto.MessageRealtimeEventDto;
 import com.whu.treehole.message.config.MessageServiceConfig;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.stereotype.Component;
@@ -15,7 +15,7 @@ public class MessageEventConsumer {
     }
 
     @RabbitListener(queues = MessageServiceConfig.MESSAGE_CREATED_QUEUE)
-    public void handle(MessageEventDto event) {
+    public void handle(MessageRealtimeEventDto event) {
         messageSessionRegistry.pushEvent(event);
     }
 }

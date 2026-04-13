@@ -245,6 +245,7 @@ export interface DmConversationPeer {
 
 export interface DmConversationSummary {
   conversationCode: string;
+  conversationType: string;
   peer: DmConversationPeer;
   lastMessage: string | null;
   displayTime: string | null;
@@ -254,6 +255,27 @@ export interface DmConversationSummary {
 export interface DmConversationDetail extends DmConversationSummary {
   status: string;
   messages: Message[];
+}
+
+export interface NotificationSummary {
+  messagesUnread: number;
+  interactionsUnread: number;
+  systemUnread: number;
+  totalUnread: number;
+  hasUnread: boolean;
+}
+
+export interface DmRealtimeRecipientState {
+  userId: number;
+  conversation: DmConversationSummary;
+  message: Message | null;
+  unreadNotification: NotificationSummary;
+}
+
+export interface DmRealtimeEvent {
+  type: string;
+  conversationCode: string;
+  recipientStates: DmRealtimeRecipientState[];
 }
 
 export interface ComposePayload {

@@ -8,6 +8,9 @@
         SELECT c.id,
                c.conversation_code,
                c.conversation_type,
+               c.conversation_scene,
+               c.source_post_code,
+               c.anonymous_flag,
                c.status,
                c.created_by,
                c.last_message_id,
@@ -20,10 +23,14 @@
          AND p1.user_id = #{userId}
          AND p1.deleted_at IS NULL
         JOIN dm_conversation_participants p2
-          ON p2.conversation_id = c.id
+         ON p2.conversation_id = c.id
          AND p2.user_id = #{peerUserId}
          AND p2.deleted_at IS NULL
-        WHERE c.conversation_type = 'SINGLE'
+        WHERE c.conversation_scene = #{conversationScene}
+          AND (
+              (#{sourcePostCode} IS NULL AND c.source_post_code IS NULL)
+              OR c.source_post_code = #{sourcePostCode}
+          )
         LIMIT 1
     </select>
 
@@ -32,6 +39,9 @@
         INSERT INTO dm_conversations (
             conversation_code,
             conversation_type,
+            conversation_scene,
+            source_post_code,
+            anonymous_flag,
             status,
             created_by,
             last_message_id,
@@ -41,6 +51,9 @@
         ) VALUES (
             #{conversationCode},
             #{conversationType},
+            #{conversationScene},
+            #{sourcePostCode},
+            #{anonymousFlag},
             #{status},
             #{createdBy},
             #{lastMessageId},
@@ -89,9 +102,23 @@
     <select id="selectConversationList" resultType="com.whu.treehole.infra.model.ConversationData">
         SELECT c.id,
                c.conversation_code,
-               peer.name AS peer_name,
-               peer.tagline AS peer_subtitle,
-               peer.avatar_url AS peer_avatar_url,
+               CASE
+                   WHEN c.anonymous_flag = 1 OR c.conversation_scene = 'ANONYMOUS_POST' THEN '匿名树洞作者'
+                   ELSE peer.name
+               END AS peer_name,
+               CASE
+                   WHEN c.anonymous_flag = 1 OR c.conversation_scene = 'ANONYMOUS_POST' THEN '匿名私信会话'
+                   ELSE peer.tagline
+               END AS peer_subtitle,
+               CASE
+                   WHEN c.anonymous_flag = 1 OR c.conversation_scene = 'ANONYMOUS_POST' THEN '/images/avatar-anonymous.svg'
+                   ELSE peer.avatar_url
+               END AS peer_avatar_url,
+               CASE
+                   WHEN c.anonymous_flag = 1 OR c.conversation_scene = 'ANONYMOUS_POST' THEN 'ANONYMOUS_POST'
+                   WHEN c.conversation_type = 'SINGLE' THEN 'DIRECT'
+                   ELSE c.conversation_type
+               END AS conversation_type,
                CASE
                    WHEN last_message.status = 'REVOKED' THEN
                        CASE
@@ -119,10 +146,61 @@
         ORDER BY sort_time DESC, c.id DESC
     </select>
 
+    <select id="selectConversationSummary" resultType="com.whu.treehole.infra.model.ConversationData">
+        SELECT c.id,
+               c.conversation_code,
+               CASE
+                   WHEN c.anonymous_flag = 1 OR c.conversation_scene = 'ANONYMOUS_POST' THEN '匿名树洞作者'
+                   ELSE peer.name
+               END AS peer_name,
+               CASE
+                   WHEN c.anonymous_flag = 1 OR c.conversation_scene = 'ANONYMOUS_POST' THEN '匿名私信会话'
+                   ELSE peer.tagline
+               END AS peer_subtitle,
+               CASE
+                   WHEN c.anonymous_flag = 1 OR c.conversation_scene = 'ANONYMOUS_POST' THEN '/images/avatar-anonymous.svg'
+                   ELSE peer.avatar_url
+               END AS peer_avatar_url,
+               CASE
+                   WHEN c.anonymous_flag = 1 OR c.conversation_scene = 'ANONYMOUS_POST' THEN 'ANONYMOUS_POST'
+                   WHEN c.conversation_type = 'SINGLE' THEN 'DIRECT'
+                   ELSE c.conversation_type
+               END AS conversation_type,
+               CASE
+                   WHEN last_message.status = 'REVOKED' THEN
+                       CASE
+                           WHEN last_message.sender_user_id = p.user_id THEN '浣犳挙鍥炰簡涓€鏉℃秷鎭?'
+                           ELSE '瀵规柟鎾ゅ洖浜嗕竴鏉℃秷鎭?'
+                       END
+                   ELSE last_message.content_payload
+               END AS last_message,
+               DATE_FORMAT(c.last_message_at, '%H:%i') AS display_time,
+               p.unread_count,
+               COALESCE(c.last_message_at, c.created_at) AS sort_time
+        FROM dm_conversation_participants p
+        JOIN dm_conversations c
+          ON c.id = p.conversation_id
+        JOIN dm_conversation_participants peer_p
+          ON peer_p.conversation_id = c.id
+         AND peer_p.user_id &lt;&gt; p.user_id
+         AND peer_p.deleted_at IS NULL
+        JOIN users peer
+          ON peer.id = peer_p.user_id
+        LEFT JOIN dm_messages last_message
+          ON last_message.id = c.last_message_id
+        WHERE p.user_id = #{userId}
+          AND p.deleted_at IS NULL
+          AND c.conversation_code = #{conversationCode}
+        LIMIT 1
+    </select>
+
     <select id="selectConversationByCodeAndUserId" resultType="com.whu.treehole.infra.model.DmConversationData">
         SELECT c.id,
                c.conversation_code,
                c.conversation_type,
+               c.conversation_scene,
+               c.source_post_code,
+               c.anonymous_flag,
                c.status,
                c.created_by,
                c.last_message_id,
@@ -241,6 +319,16 @@
         WHERE c.conversation_code = #{conversationCode}
           AND p.deleted_at IS NULL
         ORDER BY user_id ASC
+    </select>
+
+    <select id="selectUnreadAggregate" resultType="com.whu.treehole.infra.model.DmUnreadAggregateData">
+        SELECT p.user_id,
+               COALESCE(SUM(p.unread_count), 0) AS messages_unread
+        FROM dm_conversation_participants p
+        WHERE p.user_id = #{userId}
+          AND p.deleted_at IS NULL
+        GROUP BY p.user_id
+        LIMIT 1
     </select>
 
     <insert id="insertMessage" parameterType="com.whu.treehole.infra.model.DmMessageData"

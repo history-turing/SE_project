@@ -4,6 +4,7 @@ import com.whu.treehole.infra.model.ConversationData;
 import com.whu.treehole.infra.model.DmConversationData;
 import com.whu.treehole.infra.model.DmConversationParticipantData;
 import com.whu.treehole.infra.model.DmMessageData;
+import com.whu.treehole.infra.model.DmUnreadAggregateData;
 import com.whu.treehole.infra.model.UserProfileData;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -12,7 +13,9 @@ import org.apache.ibatis.annotations.Param;
 public interface MessageDomainMapper {
 
     DmConversationData selectSingleConversationBetweenUsers(@Param("userId") Long userId,
-                                                            @Param("peerUserId") Long peerUserId);
+                                                            @Param("peerUserId") Long peerUserId,
+                                                            @Param("conversationScene") String conversationScene,
+                                                            @Param("sourcePostCode") String sourcePostCode);
 
     void insertConversation(DmConversationData conversationData);
 
@@ -21,6 +24,9 @@ public interface MessageDomainMapper {
     Long selectConversationIdByCode(@Param("conversationCode") String conversationCode);
 
     List<ConversationData> selectConversationList(@Param("userId") Long userId);
+
+    ConversationData selectConversationSummary(@Param("userId") Long userId,
+                                               @Param("conversationCode") String conversationCode);
 
     DmConversationData selectConversationByCodeAndUserId(@Param("userId") Long userId,
                                                          @Param("conversationCode") String conversationCode);
@@ -39,6 +45,8 @@ public interface MessageDomainMapper {
                                       @Param("messageCode") String messageCode);
 
     List<Long> selectConversationParticipantUserIds(@Param("conversationCode") String conversationCode);
+
+    DmUnreadAggregateData selectUnreadAggregate(@Param("userId") Long userId);
 
     void insertMessage(DmMessageData messageData);
 

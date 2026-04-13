@@ -9,6 +9,13 @@ vi.mock('../context/AppContext', () => ({
       name: 'xiewei',
       avatar: 'https://example.com/avatar.png',
     },
+    notificationSummary: {
+      messagesUnread: 3,
+      interactionsUnread: 0,
+      systemUnread: 0,
+      totalUnread: 3,
+      hasUnread: true,
+    },
   }),
 }));
 
@@ -36,8 +43,9 @@ vi.mock('../services/api', () => ({
   getAnnouncementPopup: vi.fn().mockResolvedValue(null),
 }));
 
-test('renders a single admin entry in the shared topbar for admin users', () => {
+test('renders a single admin entry and unread badge in the shared topbar for admin users', () => {
   renderWithProviders(<AppShell />, { route: '/' });
 
-  expect(screen.getAllByRole('link', { name: '管理台' })).toHaveLength(1);
+  expect(screen.getAllByRole('link', { name: /管理台/i })).toHaveLength(1);
+  expect(screen.getByText('3')).toBeInTheDocument();
 });

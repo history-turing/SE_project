@@ -5,6 +5,7 @@ import java.util.List;
 
 public record ConversationDetailDto(
         String conversationCode,
+        String conversationType,
         ConversationStatus status,
         ConversationPeerDto peer,
         String lastMessage,

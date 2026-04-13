@@ -148,6 +148,27 @@ button {
   flex-wrap: nowrap;
 }
 
+.topbar__actions .ghost-button {
+  position: relative;
+}
+
+.topbar-badge {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  border-radius: 999px;
+  background: #d43b2a;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 20px;
+  text-align: center;
+  box-shadow: 0 6px 16px rgba(212, 59, 42, 0.28);
+}
+
 .search-bar {
   width: clamp(190px, 18vw, 250px);
   min-width: 190px;

@@ -5,17 +5,20 @@ import { createDirectConversation } from '../services/api';
 
 interface ConversationLauncherButtonProps {
   peerUserCode: string;
+  sourcePostCode?: string;
+  anonymousEntry?: boolean;
   className?: string;
 }
 
 export function ConversationLauncherButton({
   peerUserCode,
+  sourcePostCode,
+  anonymousEntry = false,
   className = 'mini-button',
 }: ConversationLauncherButtonProps) {
   const navigate = useNavigate();
   const { user } = useAuthContext();
   const [loading, setLoading] = useState(false);
-  const [success, setSuccess] = useState(false);
   const [error, setError] = useState('');
 
   if (!peerUserCode || user?.userCode === peerUserCode) {
@@ -30,11 +33,14 @@ export function ConversationLauncherButton({
     setLoading(true);
     setError('');
     try {
-      const result = await createDirectConversation(peerUserCode);
-      setSuccess(true);
+      const result = await createDirectConversation({
+        peerUserCode,
+        sourcePostCode,
+        anonymousEntry,
+      });
       navigate(`/profile?tab=messages&conversation=${encodeURIComponent(result.conversationCode)}`);
     } catch (launchError) {
-      console.error('创建私信会话失败。', launchError);
+      console.error('create direct conversation failed', launchError);
       setError('暂时无法进入私信会话，请稍后重试。');
     } finally {
       setLoading(false);
@@ -46,7 +52,6 @@ export function ConversationLauncherButton({
       <button className={className} type="button" disabled={loading} onClick={() => void handleClick()}>
         {loading ? '发起中...' : '发私信'}
       </button>
-      {success ? <span className="conversation-launcher__hint">已进入私信会话</span> : null}
       {error ? <span className="auth-error">{error}</span> : null}
     </div>
   );
