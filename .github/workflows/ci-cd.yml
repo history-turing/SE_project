@@ -2,7 +2,11 @@ name: CI/CD
 
 on:
   push:
+    branches:
+      - main
   pull_request:
+    branches:
+      - main
   workflow_dispatch:
 
 permissions:
@@ -45,7 +49,21 @@ jobs:
 
       - name: Test backend modules
         working-directory: backend
-        run: mvn -q -s settings.xml test
+        run: mvn -B -ntp -e -s settings.xml test
+
+      - name: Print surefire reports on failure
+        if: failure()
+        working-directory: backend
+        run: |
+          find . -path "*/target/surefire-reports/*" -type f \( -name "*.txt" -o -name "*.xml" \) -print -exec cat {} \;
+
+      - name: Upload backend test reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-test-reports
+          path: backend/**/target/surefire-reports/**
+          if-no-files-found: ignore
 
       - name: Validate compose contract
         run: docker compose --env-file .env.example -f docker-compose.yml config >/tmp/compose.out
