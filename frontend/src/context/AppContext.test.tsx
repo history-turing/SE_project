@@ -173,6 +173,49 @@ describe('AppProvider bootstrap', () => {
     });
   });
 
+  test('keeps unread dm badge on bootstrap until the user explicitly opens a conversation', async () => {
+    apiMocks.getHomePage.mockResolvedValue({
+      stats: {
+        treeholeUpdates: '12',
+        hotTopics: '5',
+        alumniPosts: '3',
+      },
+      topicHighlights: [],
+      rankings: [],
+      notices: [],
+      posts: [],
+    });
+    apiMocks.getDmConversations.mockResolvedValue([
+      {
+        conversationCode: 'dm-unread',
+        conversationType: 'DIRECT',
+        peer: {
+          userCode: 'user-9',
+          name: 'tester',
+          subtitle: 'WHU',
+          avatar: '',
+        },
+        lastMessage: 'new message',
+        displayTime: '21:45',
+        unreadCount: 2,
+      },
+    ]);
+
+    render(
+      <AppProvider>
+        <Probe />
+      </AppProvider>,
+    );
+
+    await waitFor(() => {
+      expect(screen.getByTestId('conversation-count')).toHaveTextContent('1');
+      expect(screen.getByTestId('message-unread')).toHaveTextContent('2');
+    });
+
+    expect(apiMocks.getDmConversationDetail).not.toHaveBeenCalled();
+    expect(apiMocks.markDmConversationRead).not.toHaveBeenCalled();
+  });
+
   test('treats 首页 posts as home-feed content when composing new posts', async () => {
     const user = userEvent.setup();
 

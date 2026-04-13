@@ -44,8 +44,19 @@ export function ProfilePage() {
     const requestedConversation = searchParams.get('conversation');
     if (tab === 'messages' && requestedConversation && requestedConversation !== activeConversationCode) {
       void selectConversation(requestedConversation);
+      return;
     }
-  }, [activeConversationCode, searchParams, selectConversation, tab]);
+    if (
+      tab === 'messages' &&
+      !requestedConversation &&
+      !activeConversationCode &&
+      conversations.length
+    ) {
+      const fallbackConversationCode = conversations[0].conversationCode;
+      void selectConversation(fallbackConversationCode);
+      updateQuery('messages', fallbackConversationCode);
+    }
+  }, [activeConversationCode, conversations, searchParams, selectConversation, tab]);
 
   const savedPosts = useMemo(() => {
     const unique = new Map<string, (typeof communityPosts)[number]>();

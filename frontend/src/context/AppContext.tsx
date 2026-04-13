@@ -316,12 +316,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
       const nextConversations = dmConversations ?? [];
       setConversations(nextConversations);
       setNotificationSummary(buildNotificationSummaryFromConversations(nextConversations));
-      if (nextConversations.length) {
-        setActiveConversationCode((current) => current || nextConversations[0].conversationCode);
-      } else {
-        setActiveConversationCode('');
-        setActiveConversation(null);
-      }
+      setActiveConversationCode('');
+      setActiveConversation(null);
     }
 
     void bootstrap();
