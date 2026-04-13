@@ -149,6 +149,7 @@ public class AuthService {
         authMapper.insertUserStat(userCreateData.getId(), "收藏内容", "0", 2);
         authMapper.insertUserStat(userCreateData.getId(), "已建立私信", "0", 3);
 
+        ensureDefaultUserRole(userCreateData.getId(), now);
         stringRedisTemplate.delete(emailCodeKey(email));
         stringRedisTemplate.delete(emailSendLockKey(email));
         return buildAuthResponse(userCreateData.getId());
@@ -167,6 +168,7 @@ public class AuthService {
     }
 
     public AuthUserDto getCurrentUser(long userId) {
+        ensureDefaultUserRole(userId, LocalDateTime.now());
         AuthCredentialData credential = authMapper.selectCredentialByUserId(userId);
         if (credential == null) {
             throw new BusinessException(4011, "登录已失效，请重新登录");
@@ -206,6 +208,19 @@ public class AuthService {
         String token = generateToken();
         stringRedisTemplate.opsForValue().set(sessionKey(token), String.valueOf(userId), authProperties.getSessionTtl());
         return new AuthResponse(token, getCurrentUser(userId));
+    }
+
+    private void ensureDefaultUserRole(long userId, LocalDateTime now) {
+        if (!authMapper.selectRolesByUserId(userId).isEmpty()) {
+            return;
+        }
+
+        RoleData defaultRole = authMapper.selectRoleByCode("USER");
+        if (defaultRole == null || defaultRole.getId() == null) {
+            throw new BusinessException(5002, "DEFAULT_USER_ROLE_MISSING");
+        }
+
+        authMapper.insertUserRole(userId, defaultRole.getId(), now, userId);
     }
 
     private UserCreateData buildDefaultUser(String username, LocalDateTime now) {

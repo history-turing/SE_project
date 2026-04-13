@@ -286,6 +286,11 @@ export interface ComposePayload {
   anonymous: boolean;
 }
 
+export interface ComposePostResult {
+  ok: boolean;
+  errorMessage?: string;
+}
+
 export interface TrendingTopicAdmin {
   topicKey: string;
   displayName: string;

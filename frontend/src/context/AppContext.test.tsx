@@ -1,8 +1,9 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import userEvent from '@testing-library/user-event';
 import { render, screen, waitFor } from '@testing-library/react';
 import { AppProvider, useAppContext } from './AppContext';
 import type { FeedPost } from '../types';
+import { ApiError } from '../services/api';
 
 const apiMocks = vi.hoisted(() => ({
   getHomePage: vi.fn(),
@@ -21,6 +22,16 @@ const apiMocks = vi.hoisted(() => ({
 }));
 
 vi.mock('../services/api', () => ({
+  ApiError: class extends Error {
+    status: number;
+    code: number;
+
+    constructor(message: string, status: number, code: number) {
+      super(message);
+      this.status = status;
+      this.code = code;
+    }
+  },
   getHomePage: apiMocks.getHomePage,
   getTopicsPage: apiMocks.getTopicsPage,
   getAlumniPage: apiMocks.getAlumniPage,
@@ -66,6 +77,7 @@ function Probe({ autoSelectConversationCode }: { autoSelectConversationCode?: st
     selectConversation,
   } = useAppContext();
   const hasAutoSelectedRef = useRef(false);
+  const [composeResult, setComposeResult] = useState('');
 
   useEffect(() => {
     if (!autoSelectConversationCode || hasAutoSelectedRef.current) {
@@ -97,6 +109,26 @@ function Probe({ autoSelectConversationCode }: { autoSelectConversationCode?: st
       >
         compose-home
       </button>
+      <button
+        type="button"
+        onClick={async () => {
+          const result = (await composePost({
+            title: 'new-post',
+            content: 'new-content',
+            topic: 'topic',
+            audience: '棣栭〉',
+            anonymous: true,
+          })) as boolean | { ok: boolean; errorMessage?: string };
+          if (typeof result === 'boolean') {
+            setComposeResult(result ? 'ok' : 'failed');
+            return;
+          }
+          setComposeResult(result.ok ? 'ok' : result.errorMessage ?? 'failed');
+        }}
+      >
+        compose-home-with-result
+      </button>
+      <span data-testid="compose-result">{composeResult}</span>
     </div>
   );
 }
@@ -325,6 +357,27 @@ describe('AppProvider bootstrap', () => {
         String(treeholeUpdatesBefore + 1),
       );
       expect(screen.getByTestId('alumni-posts')).toHaveTextContent(String(alumniPostsBefore));
+    });
+  });
+
+  test('surfaces backend compose failure reason to the caller', async () => {
+    const user = userEvent.setup();
+    apiMocks.createPost.mockRejectedValueOnce(new ApiError('没有发布权限', 403, 4030));
+
+    render(
+      <AppProvider>
+        <Probe />
+      </AppProvider>,
+    );
+
+    await waitFor(() => {
+      expect(screen.getByTestId('profile-name')).toHaveTextContent('real-user');
+    });
+
+    await user.click(screen.getByRole('button', { name: 'compose-home-with-result' }));
+
+    await waitFor(() => {
+      expect(screen.getByTestId('compose-result')).toHaveTextContent('没有发布权限');
     });
   });
 });

@@ -1,6 +1,6 @@
-﻿import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { publishTopics } from '../data/siteData';
-import type { Audience } from '../types';
+import type { Audience, ComposePostResult } from '../types';
 import { Icon } from './Icon';
 
 interface ComposerModalProps {
@@ -12,7 +12,7 @@ interface ComposerModalProps {
     topic: string;
     audience: Audience;
     anonymous: boolean;
-  }) => Promise<boolean>;
+  }) => Promise<ComposePostResult>;
 }
 
 export function ComposerModal({ open, onClose, onSubmit }: ComposerModalProps) {
@@ -22,6 +22,13 @@ export function ComposerModal({ open, onClose, onSubmit }: ComposerModalProps) {
   const [audience, setAudience] = useState<Audience>('首页');
   const [anonymous, setAnonymous] = useState(true);
   const [submitting, setSubmitting] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
+
+  useEffect(() => {
+    if (!open) {
+      setErrorMessage('');
+    }
+  }, [open]);
 
   if (!open) {
     return null;
@@ -33,10 +40,12 @@ export function ComposerModal({ open, onClose, onSubmit }: ComposerModalProps) {
     }
 
     setSubmitting(true);
+    setErrorMessage('');
     try {
-      const ok = await onSubmit({ title, content, topic, audience, anonymous });
+      const result = await onSubmit({ title, content, topic, audience, anonymous });
 
-      if (!ok) {
+      if (!result.ok) {
+        setErrorMessage(result.errorMessage ?? '发布失败，请稍后重试。');
         return;
       }
 
@@ -73,7 +82,15 @@ export function ComposerModal({ open, onClose, onSubmit }: ComposerModalProps) {
         <div className="field-grid">
           <label className="field">
             <span>发布到</span>
-            <select value={audience} onChange={(event) => setAudience(event.target.value as Audience)}>
+            <select
+              value={audience}
+              onChange={(event) => {
+                if (errorMessage) {
+                  setErrorMessage('');
+                }
+                setAudience(event.target.value as Audience);
+              }}
+            >
               <option value="首页">首页树洞</option>
               <option value="校友圈">校友圈</option>
             </select>
@@ -81,7 +98,15 @@ export function ComposerModal({ open, onClose, onSubmit }: ComposerModalProps) {
 
           <label className="field">
             <span>话题</span>
-            <select value={topic} onChange={(event) => setTopic(event.target.value)}>
+            <select
+              value={topic}
+              onChange={(event) => {
+                if (errorMessage) {
+                  setErrorMessage('');
+                }
+                setTopic(event.target.value);
+              }}
+            >
               {publishTopics.map((item) => (
                 <option key={item} value={item}>
                   {item}
@@ -95,7 +120,12 @@ export function ComposerModal({ open, onClose, onSubmit }: ComposerModalProps) {
           <span>标题</span>
           <input
             value={title}
-            onChange={(event) => setTitle(event.target.value)}
+            onChange={(event) => {
+              if (errorMessage) {
+                setErrorMessage('');
+              }
+              setTitle(event.target.value);
+            }}
             placeholder="给这条树洞起一个名字（可选）"
           />
         </label>
@@ -104,7 +134,12 @@ export function ComposerModal({ open, onClose, onSubmit }: ComposerModalProps) {
           <span>正文</span>
           <textarea
             value={content}
-            onChange={(event) => setContent(event.target.value)}
+            onChange={(event) => {
+              if (errorMessage) {
+                setErrorMessage('');
+              }
+              setContent(event.target.value);
+            }}
             placeholder="今天你想把什么留在武大树洞？"
             rows={6}
           />
@@ -114,10 +149,17 @@ export function ComposerModal({ open, onClose, onSubmit }: ComposerModalProps) {
           <input
             checked={anonymous}
             type="checkbox"
-            onChange={(event) => setAnonymous(event.target.checked)}
+            onChange={(event) => {
+              if (errorMessage) {
+                setErrorMessage('');
+              }
+              setAnonymous(event.target.checked);
+            }}
           />
           <span>匿名发布，保留树洞感</span>
         </label>
+
+        {errorMessage ? <p className="auth-error">{errorMessage}</p> : null}
 
         <div className="composer-modal__footer">
           <button className="secondary-button" type="button" onClick={onClose}>

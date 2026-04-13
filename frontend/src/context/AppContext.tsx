@@ -13,6 +13,7 @@ import {
 import { useAuthContext } from './AuthContext';
 import {
   AUTH_TOKEN_STORAGE_KEY,
+  ApiError,
   createPost as createPostRequest,
   getAlumniPage,
   getDmConversationDetail,
@@ -34,6 +35,7 @@ import { createMessageRealtimeClient } from '../realtime/messageRealtimeClient';
 import type {
   AlumniContact,
   ComposePayload,
+  ComposePostResult,
   DmConversationDetail,
   DmConversationSummary,
   FeedPost,
@@ -67,7 +69,7 @@ interface AppStateValue {
   notificationSummary: NotificationSummary;
   profile: UserProfile;
   refreshHomeStats: () => Promise<void>;
-  composePost: (payload: ComposePayload) => Promise<boolean>;
+  composePost: (payload: ComposePayload) => Promise<ComposePostResult>;
   toggleLike: (postId: string) => Promise<void>;
   toggleSave: (postId: string) => Promise<void>;
   removePost: (postId: string) => void;
@@ -503,7 +505,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   async function composePost(payload: ComposePayload) {
     if (!payload.content.trim()) {
-      return false;
+      return {
+        ok: false,
+        errorMessage: '正文不能为空',
+      };
     }
 
     try {
@@ -522,10 +527,13 @@ export function AppProvider({ children }: { children: ReactNode }) {
         }));
       }
       setMyPosts((current) => [nextPost, ...current]);
-      return true;
+      return { ok: true };
     } catch (error) {
       console.error('compose post failed', error);
-      return false;
+      return {
+        ok: false,
+        errorMessage: error instanceof ApiError ? error.message : '发布失败，请稍后重试。',
+      };
     }
   }
 
