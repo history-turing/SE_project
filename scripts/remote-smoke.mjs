@@ -5,6 +5,7 @@ import { pathToFileURL } from "node:url";
 import {
   parseCliArgs,
   pickAnonymousPost,
+  validateAnonymousBrowserSurface,
   validateAnonymousConversation,
   validateUnreadFlow,
 } from "./remote-smoke-lib.mjs";
@@ -262,10 +263,15 @@ async function runBrowserSmoke(baseUrl, options) {
     if (anonymousHeader !== anonymous.validation.peerName) {
       throw new Error(`Anonymous browser smoke expected header ${anonymous.validation.peerName} but got ${anonymousHeader}`);
     }
-    const adminContent = await adminPage.content();
-    if (adminContent.includes(anonymous.selectedPost.authorUserCode)) {
-      throw new Error("Anonymous browser smoke detected a leaked real user code in the rendered page.");
-    }
+    const anonymousSelectedConversationHtml =
+      (await adminPage.locator(".conversation-item.is-active").innerHTML().catch(() => "")) ?? "";
+    const anonymousMessagePanelHtml =
+      (await adminPage.locator(".message-panel").innerHTML().catch(() => "")) ?? "";
+    validateAnonymousBrowserSurface({
+      authorUserCode: anonymous.selectedPost.authorUserCode,
+      selectedConversationHtml: anonymousSelectedConversationHtml,
+      messagePanelHtml: anonymousMessagePanelHtml,
+    });
     const anonymousScreenshot = path.join(config.outputDir, "remote-anonymous-conversation.png");
     await adminPage.screenshot({ path: anonymousScreenshot, fullPage: true });
     await adminPage.close();

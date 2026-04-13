@@ -87,6 +87,35 @@ export function validateAnonymousConversation(result) {
   };
 }
 
+export function validateAnonymousBrowserSurface(result) {
+  const authorUserCode = result?.authorUserCode ?? "";
+  const selectedConversationHtml = result?.selectedConversationHtml ?? "";
+  const messagePanelHtml = result?.messagePanelHtml ?? "";
+
+  if (!authorUserCode) {
+    fail("Anonymous browser smoke did not receive the author user code.");
+  }
+
+  if (
+    selectedConversationHtml.includes(authorUserCode) ||
+    selectedConversationHtml.includes(`/users/${authorUserCode}`)
+  ) {
+    fail("Anonymous browser smoke detected a leaked real user code in the selected conversation item.");
+  }
+
+  if (
+    messagePanelHtml.includes(authorUserCode) ||
+    messagePanelHtml.includes(`/users/${authorUserCode}`)
+  ) {
+    fail("Anonymous browser smoke detected a leaked real user code in the message panel.");
+  }
+
+  return {
+    authorUserCode,
+    surfacesChecked: ["selectedConversation", "messagePanel"],
+  };
+}
+
 export function validateUnreadFlow(result) {
   if (!result?.conversationCode) {
     fail("Unread smoke did not return a conversation code.");

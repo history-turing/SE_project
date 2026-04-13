@@ -4,6 +4,7 @@ import assert from "node:assert/strict";
 import {
   parseCliArgs,
   pickAnonymousPost,
+  validateAnonymousBrowserSurface,
   validateAnonymousConversation,
   validateUnreadFlow,
 } from "./remote-smoke-lib.mjs";
@@ -63,6 +64,31 @@ test("validateAnonymousConversation accepts anonymized peer payloads", () => {
     conversationType: "ANONYMOUS_POST",
     peerName: "匿名树洞作者",
   });
+});
+
+test("validateAnonymousBrowserSurface only checks the active anonymous conversation surfaces", () => {
+  const result = validateAnonymousBrowserSurface({
+    authorUserCode: "codex-user",
+    selectedConversationHtml: "<strong>匿名树洞作者</strong><span>匿名私信会话</span>",
+    messagePanelHtml: "<h2>匿名树洞作者</h2><p>匿名私信会话</p>",
+  });
+
+  assert.deepEqual(result, {
+    authorUserCode: "codex-user",
+    surfacesChecked: ["selectedConversation", "messagePanel"],
+  });
+});
+
+test("validateAnonymousBrowserSurface rejects a leaked real user code in the active surfaces", () => {
+  assert.throws(
+    () =>
+      validateAnonymousBrowserSurface({
+        authorUserCode: "codex-user",
+        selectedConversationHtml: "<a href=\"/users/codex-user\">Codex User</a>",
+        messagePanelHtml: "<h2>匿名树洞作者</h2>",
+      }),
+    /selected conversation item/,
+  );
 });
 
 test("validateUnreadFlow enforces unread increment before read and clear after read", () => {
