@@ -126,7 +126,7 @@ export function AppShell() {
               onClick={() => navigate('/profile?tab=messages')}
             >
               <Icon name="bell" className="icon" />
-              {notificationSummary.hasUnread ? (
+              {notificationSummary.totalUnread > 0 ? (
                 <span className="topbar-badge">{notificationSummary.totalUnread}</span>
               ) : null}
             </button>

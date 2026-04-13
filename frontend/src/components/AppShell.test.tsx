@@ -2,6 +2,16 @@ import { screen } from '@testing-library/react';
 import { AppShell } from './AppShell';
 import { renderWithProviders } from '../test/renderWithProviders';
 
+const appContextState = {
+  notificationSummary: {
+    messagesUnread: 3,
+    interactionsUnread: 0,
+    systemUnread: 0,
+    totalUnread: 3,
+    hasUnread: true,
+  },
+};
+
 vi.mock('../context/AppContext', () => ({
   useAppContext: () => ({
     composePost: vi.fn(),
@@ -9,13 +19,7 @@ vi.mock('../context/AppContext', () => ({
       name: 'xiewei',
       avatar: 'https://example.com/avatar.png',
     },
-    notificationSummary: {
-      messagesUnread: 3,
-      interactionsUnread: 0,
-      systemUnread: 0,
-      totalUnread: 3,
-      hasUnread: true,
-    },
+    notificationSummary: appContextState.notificationSummary,
   }),
 }));
 
@@ -43,9 +47,33 @@ vi.mock('../services/api', () => ({
   getAnnouncementPopup: vi.fn().mockResolvedValue(null),
 }));
 
+beforeEach(() => {
+  appContextState.notificationSummary = {
+    messagesUnread: 3,
+    interactionsUnread: 0,
+    systemUnread: 0,
+    totalUnread: 3,
+    hasUnread: true,
+  };
+});
+
 test('renders a single admin entry and unread badge in the shared topbar for admin users', () => {
   renderWithProviders(<AppShell />, { route: '/' });
 
   expect(screen.getAllByRole('link', { name: /管理台/i })).toHaveLength(1);
   expect(screen.getByText('3')).toBeInTheDocument();
+});
+
+test('does not render a badge when total unread is zero even if a stale flag remains true', () => {
+  appContextState.notificationSummary = {
+    messagesUnread: 0,
+    interactionsUnread: 0,
+    systemUnread: 0,
+    totalUnread: 0,
+    hasUnread: true,
+  };
+
+  renderWithProviders(<AppShell />, { route: '/' });
+
+  expect(screen.queryByText('0')).not.toBeInTheDocument();
 });

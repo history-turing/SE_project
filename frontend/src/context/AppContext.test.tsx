@@ -1,3 +1,4 @@
+import { useEffect, useRef } from 'react';
 import userEvent from '@testing-library/user-event';
 import { render, screen, waitFor } from '@testing-library/react';
 import { AppProvider, useAppContext } from './AppContext';
@@ -54,9 +55,25 @@ vi.mock('../context/AuthContext', () => ({
   }),
 }));
 
-function Probe() {
-  const { topicRankings, profile, conversations, notificationSummary, homeStats, composePost } =
-    useAppContext();
+function Probe({ autoSelectConversationCode }: { autoSelectConversationCode?: string }) {
+  const {
+    topicRankings,
+    profile,
+    conversations,
+    notificationSummary,
+    homeStats,
+    composePost,
+    selectConversation,
+  } = useAppContext();
+  const hasAutoSelectedRef = useRef(false);
+
+  useEffect(() => {
+    if (!autoSelectConversationCode || hasAutoSelectedRef.current) {
+      return;
+    }
+    hasAutoSelectedRef.current = true;
+    void selectConversation(autoSelectConversationCode);
+  }, [autoSelectConversationCode, selectConversation]);
 
   return (
     <div>
@@ -214,6 +231,75 @@ describe('AppProvider bootstrap', () => {
 
     expect(apiMocks.getDmConversationDetail).not.toHaveBeenCalled();
     expect(apiMocks.markDmConversationRead).not.toHaveBeenCalled();
+  });
+
+  test('does not restore unread badge from stale bootstrap data after a conversation is opened during bootstrap', async () => {
+    let resolveDmConversations: ((value: Array<Record<string, unknown>>) => void) | null = null;
+
+    apiMocks.getHomePage.mockResolvedValue({
+      stats: {
+        treeholeUpdates: '12',
+        hotTopics: '5',
+        alumniPosts: '3',
+      },
+      topicHighlights: [],
+      rankings: [],
+      notices: [],
+      posts: [],
+    });
+    apiMocks.getDmConversations.mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          resolveDmConversations = resolve;
+        }),
+    );
+    apiMocks.getDmConversationDetail.mockResolvedValue({
+      conversationCode: 'dm-unread',
+      conversationType: 'DIRECT',
+      status: 'ACTIVE',
+      peer: {
+        userCode: 'user-9',
+        name: 'tester',
+        subtitle: 'WHU',
+        avatarUrl: '',
+      },
+      lastMessage: 'new message',
+      lastMessageTime: '21:45',
+      unreadCount: 1,
+      messages: [],
+    });
+
+    render(
+      <AppProvider>
+        <Probe autoSelectConversationCode="dm-unread" />
+      </AppProvider>,
+    );
+
+    await waitFor(() => {
+      expect(apiMocks.getDmConversationDetail).toHaveBeenCalledWith('dm-unread');
+      expect(apiMocks.markDmConversationRead).toHaveBeenCalledWith('dm-unread');
+    });
+
+    resolveDmConversations?.([
+      {
+        conversationCode: 'dm-unread',
+        conversationType: 'DIRECT',
+        peer: {
+          userCode: 'user-9',
+          name: 'tester',
+          subtitle: 'WHU',
+          avatar: '',
+        },
+        lastMessage: 'new message',
+        displayTime: '21:45',
+        unreadCount: 1,
+      },
+    ]);
+
+    await waitFor(() => {
+      expect(screen.getByTestId('conversation-count')).toHaveTextContent('1');
+      expect(screen.getByTestId('message-unread')).toHaveTextContent('0');
+    });
   });
 
   test('treats 首页 posts as home-feed content when composing new posts', async () => {
