@@ -27,6 +27,7 @@ class WebConfigCorsTest {
         CorsConfiguration configuration = readField(registrations.get(0), "config");
         assertTrue(configuration.getAllowedOrigins().contains("http://43.134.116.122"));
         assertTrue(configuration.getAllowedOrigins().contains("http://43.134.116.122:3000"));
+        assertTrue(configuration.getAllowedOrigins().contains("https://whu-treehole.5432131.xyz"));
     }
 
     @SuppressWarnings("unchecked")

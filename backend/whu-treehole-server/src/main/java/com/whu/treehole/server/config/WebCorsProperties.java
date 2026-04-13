@@ -13,7 +13,8 @@ public class WebCorsProperties {
             "http://localhost:4173",
             "http://43.134.116.122",
             "http://43.134.116.122:3000",
-            "https://43.134.116.122"));
+            "https://43.134.116.122",
+            "https://whu-treehole.5432131.xyz"));
 
     public List<String> getAllowedOrigins() {
         return allowedOrigins;
