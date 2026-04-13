@@ -32,6 +32,8 @@ export function ProfilePage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const [tab, setTab] = useState<ProfileTab>(() => resolveTab(searchParams.get('tab')));
   const [draft, setDraft] = useState('');
+  const focusedConversationCode = searchParams.get('conversation') ?? '';
+  const messageFocusMode = tab === 'messages' && Boolean(focusedConversationCode);
 
   useEffect(() => {
     const nextTab = resolveTab(searchParams.get('tab'));
@@ -46,12 +48,7 @@ export function ProfilePage() {
       void selectConversation(requestedConversation);
       return;
     }
-    if (
-      tab === 'messages' &&
-      !requestedConversation &&
-      !activeConversationCode &&
-      conversations.length
-    ) {
+    if (tab === 'messages' && !requestedConversation && !activeConversationCode && conversations.length) {
       const fallbackConversationCode = conversations[0].conversationCode;
       void selectConversation(fallbackConversationCode);
       updateQuery('messages', fallbackConversationCode);
@@ -80,6 +77,8 @@ export function ProfilePage() {
       if (conversationCode) {
         nextParams.set('conversation', conversationCode);
       } else if (nextTab !== 'messages') {
+        nextParams.delete('conversation');
+      } else {
         nextParams.delete('conversation');
       }
     }
@@ -183,7 +182,7 @@ export function ProfilePage() {
       ) : null}
 
       {tab === 'messages' ? (
-        <section className="message-layout">
+        <section className={`message-layout${messageFocusMode ? ' message-layout--thread' : ''}`}>
           <aside className="message-list">
             <div className="section-head">
               <h2>消息会话</h2>
@@ -229,16 +228,25 @@ export function ProfilePage() {
             {activeConversation ? (
               <>
                 <div className="message-panel__head">
-                  <div>
-                    <h2>{activeConversation.peer.name}</h2>
-                    <p>{activeConversation.peer.subtitle}</p>
+                  <div className="message-panel__head-main">
+                    <button
+                      className="mini-button message-panel__back"
+                      type="button"
+                      onClick={() => updateQuery('messages')}
+                    >
+                      返回会话列表
+                    </button>
+                    <div>
+                      <h2>{activeConversation.peer.name}</h2>
+                      <p>{activeConversation.peer.subtitle}</p>
+                    </div>
                   </div>
                 </div>
 
                 <div className="message-thread">
                   {messagesLoading ? <p className="search-empty">会话加载中...</p> : null}
                   {!messagesLoading && !activeConversation.messages.length ? (
-                    <p className="search-empty">还没有消息，先打个招呼吧。</p>
+                    <p className="search-empty">还没有消息，先打一个招呼吧。</p>
                   ) : null}
                   {activeConversation.messages.map((message) => (
                     <article key={message.id} className={`bubble${message.sender === 'me' ? ' bubble--me' : ''}`}>

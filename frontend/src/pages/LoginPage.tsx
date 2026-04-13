@@ -1,4 +1,4 @@
-﻿import { useState, type FormEvent } from 'react';
+import { useState, type FormEvent } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuthContext } from '../context/AuthContext';
 import { ApiError } from '../services/api';
@@ -30,19 +30,6 @@ export function LoginPage() {
   return (
     <div className="auth-shell">
       <div className="auth-layout">
-        <section className="auth-side">
-          <p className="eyebrow">Whu Treehole</p>
-          <h1>先完成登录，再进入武大树洞。</h1>
-          <p className="auth-copy">
-            首次使用需要用武大教育邮箱完成注册。注册成功后，后续只需用户名和密码即可登录。
-          </p>
-          <ul className="auth-feature-list">
-            <li>仅允许 @whu.edu.cn 教育邮箱注册</li>
-            <li>验证码校验通过后才能创建账号</li>
-            <li>帖子、收藏和互动都会绑定到你的真实账号</li>
-          </ul>
-        </section>
-
         <section className="auth-card">
           <p className="eyebrow">账号登录</p>
           <h2>欢迎回来</h2>
@@ -80,6 +67,19 @@ export function LoginPage() {
           <p className="auth-switch">
             还没有账号？<Link to="/register">去注册</Link>
           </p>
+        </section>
+
+        <section className="auth-side">
+          <p className="eyebrow">Whu Treehole</p>
+          <h1>先完成登录，再进入武大树洞。</h1>
+          <p className="auth-copy">
+            首次使用需要用武大教育邮箱完成注册。注册成功后，后续只需用户名和密码即可登录。
+          </p>
+          <ul className="auth-feature-list">
+            <li>仅允许 @whu.edu.cn 教育邮箱注册</li>
+            <li>验证码校验通过后才能创建账号</li>
+            <li>帖子、收藏和互动都会绑定到你的真实账号</li>
+          </ul>
         </section>
       </div>
     </div>

@@ -1,4 +1,4 @@
-﻿import { useEffect, useState, type FormEvent } from 'react';
+import { useEffect, useState, type FormEvent } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuthContext } from '../context/AuthContext';
 import { ApiError, sendEmailCode } from '../services/api';
@@ -69,20 +69,6 @@ export function RegisterPage() {
   return (
     <div className="auth-shell">
       <div className="auth-layout">
-        <section className="auth-side auth-side--rose">
-          <p className="eyebrow">武大教育邮箱认证</p>
-          <h1>首次注册必须先通过邮箱验证码。</h1>
-          <p className="auth-copy">
-            使用 @whu.edu.cn 教育邮箱获取验证码。验证通过后，再设置用户名和密码，后续登录就不需要再收验证码。
-          </p>
-          <div className="auth-note-card">
-            <strong>注册流程</strong>
-            <span>1. 填写武大邮箱并发送验证码</span>
-            <span>2. 输入收到的 6 位验证码</span>
-            <span>3. 设置用户名和密码并完成注册</span>
-          </div>
-        </section>
-
         <section className="auth-card">
           <p className="eyebrow">账号注册</p>
           <h2>创建你的树洞账号</h2>
@@ -151,6 +137,20 @@ export function RegisterPage() {
           <p className="auth-switch">
             已有账号？<Link to="/login">去登录</Link>
           </p>
+        </section>
+
+        <section className="auth-side auth-side--rose">
+          <p className="eyebrow">武大教育邮箱认证</p>
+          <h1>首次注册必须先通过邮箱验证码。</h1>
+          <p className="auth-copy">
+            使用 @whu.edu.cn 教育邮箱获取验证码。验证通过后，再设置用户名和密码，后续登录就不需要再收验证码。
+          </p>
+          <div className="auth-note-card">
+            <strong>注册流程</strong>
+            <span>1. 填写武大邮箱并发送验证码</span>
+            <span>2. 输入收到的 6 位验证码</span>
+            <span>3. 设置用户名和密码并完成注册</span>
+          </div>
         </section>
       </div>
     </div>

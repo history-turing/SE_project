@@ -132,3 +132,12 @@ test('selects the first conversation when opening messages tab without a convers
     expect(selectConversation).toHaveBeenCalledWith('dm-1001');
   });
 });
+
+test('renders a back action for narrow-screen message workflows when a conversation is focused', () => {
+  renderWithProviders(<ProfilePage />, {
+    route: '/profile?tab=messages&conversation=dm-1001',
+    path: '/profile',
+  });
+
+  expect(screen.getByRole('button', { name: '返回会话列表' })).toBeInTheDocument();
+});

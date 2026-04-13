@@ -112,7 +112,7 @@ export function HomePage() {
           <Link
             key={group.id}
             className={`topic-chip tone-${group.accent}`}
-            to={group.destination === '/' ? `/?topic=${group.name}` : `/topics`}
+            to={group.destination === '/' ? `/?topic=${group.name}` : '/topics'}
           >
             <span>{group.emoji}</span>
             <strong>{group.name}</strong>
@@ -122,7 +122,28 @@ export function HomePage() {
       </section>
 
       <div className="page-grid page-grid--home">
-        <aside className="sidebar-column">
+        <section className="content-column content-column--primary">
+          <div className="filter-row filter-row--scrollable">
+            {homeFilters.map((filter) => (
+              <button
+                key={filter}
+                className={`filter-chip${activeTopic === filter ? ' is-active' : ''}`}
+                type="button"
+                onClick={() => setTopic(filter)}
+              >
+                {filter}
+              </button>
+            ))}
+          </div>
+
+          <div className="post-stack">
+            {filteredPosts.map((post) => (
+              <PostCard key={post.id} post={post} />
+            ))}
+          </div>
+        </section>
+
+        <aside className="sidebar-column sidebar-column--left">
           <section className="surface-card">
             <div className="section-head">
               <h2>热议话题</h2>
@@ -158,28 +179,7 @@ export function HomePage() {
           </section>
         </aside>
 
-        <section className="content-column">
-          <div className="filter-row">
-            {homeFilters.map((filter) => (
-              <button
-                key={filter}
-                className={`filter-chip${activeTopic === filter ? ' is-active' : ''}`}
-                type="button"
-                onClick={() => setTopic(filter)}
-              >
-                {filter}
-              </button>
-            ))}
-          </div>
-
-          <div className="post-stack">
-            {filteredPosts.map((post) => (
-              <PostCard key={post.id} post={post} />
-            ))}
-          </div>
-        </section>
-
-        <aside className="sidebar-column">
+        <aside className="sidebar-column sidebar-column--right">
           <section className="surface-card tone-rose">
             <div className="section-head">
               <h2>今日推荐路径</h2>

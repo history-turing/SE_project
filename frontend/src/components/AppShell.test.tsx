@@ -1,3 +1,4 @@
+import userEvent from '@testing-library/user-event';
 import { screen } from '@testing-library/react';
 import { AppShell } from './AppShell';
 import { renderWithProviders } from '../test/renderWithProviders';
@@ -58,10 +59,31 @@ beforeEach(() => {
 });
 
 test('renders a single admin entry and unread badge in the shared topbar for admin users', () => {
+  const { container } = renderWithProviders(<AppShell />, { route: '/' });
+  const desktopNav = container.querySelector('.desktop-nav');
+
+  expect(desktopNav?.querySelectorAll('a[href="/admin"]')).toHaveLength(1);
+  expect(screen.getByText('3')).toBeInTheDocument();
+});
+
+test('renders admin navigation in both desktop and mobile navigation surfaces for admin users', () => {
   renderWithProviders(<AppShell />, { route: '/' });
 
-  expect(screen.getAllByRole('link', { name: /管理台/i })).toHaveLength(1);
-  expect(screen.getByText('3')).toBeInTheDocument();
+  expect(screen.getAllByRole('link', { name: /管理台/i })).toHaveLength(2);
+});
+
+test('toggles the mobile search row without affecting the existing shell search flow', async () => {
+  const user = userEvent.setup();
+
+  renderWithProviders(<AppShell />, { route: '/' });
+
+  const toggle = screen.getByRole('button', { name: '打开搜索' });
+  expect(toggle).toHaveAttribute('aria-expanded', 'false');
+
+  await user.click(toggle);
+
+  expect(toggle).toHaveAttribute('aria-expanded', 'true');
+  expect(screen.getByRole('searchbox', { name: '移动端搜索关键词' })).toBeInTheDocument();
 });
 
 test('does not render a badge when total unread is zero even if a stale flag remains true', () => {
