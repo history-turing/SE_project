@@ -12,6 +12,7 @@ public class WebCorsProperties {
             "http://127.0.0.1:5173",
             "http://localhost:4173",
             "http://43.134.116.122",
+            "http://43.134.116.122:3000",
             "https://43.134.116.122"));
 
     public List<String> getAllowedOrigins() {
